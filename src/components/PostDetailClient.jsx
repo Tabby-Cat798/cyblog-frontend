@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import MarkdownRenderer from './MarkdownRenderer';
+import TableOfContents from './TableOfContents';
 
 const PostDetailClient = ({ postId }) => {
   const [post, setPost] = useState(null);
@@ -117,12 +118,12 @@ const PostDetailClient = ({ postId }) => {
   ];
 
   return (
-    <article className="max-w-4xl mx-auto">
+    <article className="max-w-5xl mx-auto">
       {/* 文章头部 */}
-      <header className="mb-8">
+      <header className="flex flex-col items-center text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
         
-        <div className="flex flex-wrap items-center text-gray-600 dark:text-gray-400 mb-6">
+        <div className="flex flex-wrap justify-center items-center text-gray-600 dark:text-gray-400 mb-6">
           <span className="mr-4 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -141,15 +142,14 @@ const PostDetailClient = ({ postId }) => {
 
         {/* 标签 */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap justify-center gap-2 mb-6">
             {post.tags.map((tag, index) => (
-              <Link
+              <div
                 key={index}
-                href={`/tags/${tag}`}
                 className="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800"
               >
                 {tag}
-              </Link>
+              </div>
             ))}
           </div>
         )}
@@ -167,9 +167,15 @@ const PostDetailClient = ({ postId }) => {
         )}
       </header>
 
-      {/* 文章内容 */}
-      <div className="prose prose-lg prose-blue dark:prose-invert max-w-none mb-12">
-        <MarkdownRenderer content={post.content} />
+      {/* 文章主体与目录 */}
+      <div className="flex flex-col lg:flex-row gap-10">
+        {/* 目录侧边栏 */}
+        <TableOfContents content={post.content} />
+        
+        {/* 文章内容 */}
+        <div className="flex-1 prose prose-lg prose-blue dark:prose-invert max-w-none mb-12">
+          <MarkdownRenderer content={post.content} />
+        </div>
       </div>
 
       {/* 评论区 */}

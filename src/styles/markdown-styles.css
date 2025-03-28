@@ -9,8 +9,8 @@
 
 /* 1️⃣ 标题样式 */
 .prose h1 {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: 1.875rem; /* 30px */
+  font-weight: 600;
   color: #1a202c;
   border-bottom: 2px solid #3182ce;
   padding-bottom: 0.3rem;
@@ -19,8 +19,8 @@
 }
 
 .prose h2 {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1.5rem; /* 24px */
+  font-weight: 600;
   color: #2d3748;
   margin-top: 2rem;
   margin-bottom: 1.2rem;
@@ -29,7 +29,7 @@
 }
 
 .prose h3 {
-  font-size: 1.75rem;
+  font-size: 1.25rem; /* 20px */
   font-weight: 600;
   color: #4a5568;
   margin-top: 1.8rem;
@@ -37,7 +37,7 @@
 }
 
 .prose h4 {
-  font-size: 1.5rem;
+  font-size: 1.125rem; /* 18px */
   font-weight: 600;
   color: #5a677a;
   margin-top: 1.5rem;
@@ -46,27 +46,21 @@
 
 /* 2️⃣ 段落样式 */
 .prose p {
-  font-size: 1.125rem;
-  line-height: 1.8;
+  font-size: 1rem;
+  line-height: 1.7;
   color: #444;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
 /* 3️⃣ 列表样式 */
-.prose ul {
-  list-style-type: disc;
-  padding-left: 2rem;
-  margin-bottom: 1.2rem;
-}
-
+.prose ul,
 .prose ol {
-  list-style-type: decimal;
-  padding-left: 2rem;
-  margin-bottom: 1.2rem;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
 .prose li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .prose li > ul,
@@ -217,4 +211,44 @@
 .prose ul.contains-task-list li input[type="checkbox"] {
   margin-right: 0.5rem;
   margin-top: 0.25rem;
+}
+
+/* 目录样式 */
+.toc {
+  width: 240px;
+  min-width: 240px;
+  border-right: 1px solid #e2e8f0;
+  padding-right: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .toc {
+    border-right-color: #2d3748;
+  }
+}
+
+.toc ul li {
+  margin-bottom: 0;
+}
+
+/* 嵌套目录项样式 */
+.toc ul li.pl-4 {
+  margin-left: 1rem;
+}
+
+.toc ul li.pl-8 {
+  margin-left: 2rem;
+}
+
+/* 激活状态的目录项 */
+.toc a.active {
+  color: #3182ce;
+  font-weight: 500;
+}
+
+/* 适配手机屏幕 */
+@media (max-width: 1023px) {
+  .toc {
+    display: none;
+  }
 }
