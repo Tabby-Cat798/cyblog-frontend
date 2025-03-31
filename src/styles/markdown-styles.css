@@ -1,5 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Noto+Sans+SC:wght@300;400;700&display=swap');
 
+/* 自定义容器样式，减少顶部间距 */
+.markdown-container {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* 调整第一个标题元素的上边距 */
+.markdown-container > *:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.prose h1:first-of-type {
+  margin-top: 0;
+}
+
 /* 全局 Markdown 样式 */
 .prose {
   font-family: "Noto Sans SC", sans-serif;
@@ -57,15 +73,39 @@
 .prose ol {
   font-size: 1rem;
   line-height: 1.7;
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+}
+
+.prose ol {
+  list-style-type: decimal;
 }
 
 .prose li {
   margin-bottom: 0.4rem;
+  padding-left: 0.5rem;
 }
 
 .prose li > ul,
 .prose li > ol {
   margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose li > ul {
+  list-style-type: circle;
+}
+
+.prose li > ul > li > ul {
+  list-style-type: square;
+}
+
+/* 确保列表项内的段落也有合适的间距 */
+.prose li p {
   margin-bottom: 0.5rem;
 }
 
@@ -251,4 +291,22 @@
   .toc {
     display: none;
   }
+}
+
+/* 标题高亮动画 */
+@keyframes highlight-pulse {
+  0% { background-color: rgba(59, 130, 246, 0.1); }
+  50% { background-color: rgba(59, 130, 246, 0.2); }
+  100% { background-color: rgba(59, 130, 246, 0); }
+}
+
+.highlight-heading {
+  animation: highlight-pulse 2s ease-in-out;
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+/* 锚点偏移，防止导航栏遮挡 */
+:target {
+  scroll-margin-top: 100px;
 }

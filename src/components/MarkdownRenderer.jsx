@@ -14,12 +14,32 @@ import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import "@/styles/markdown-styles.css"; // 自定义 Markdown 样式
 
-// 与TableOfContents组件共享同样的ID生成逻辑
+// 优化 ID 生成逻辑，既能处理特殊函数名，又能保留序号
 const generateId = (text) => {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '');
+  if (!text) return '';
+  
+  // 步骤1: 特殊处理带序号的标题
+  // 分析原始文本中是否有序号模式（如 "1. 盒模型"）
+  const hasNumberPrefix = /^(\d+)[\.\s]+(.+)$/.test(text);
+  
+  // 步骤2: 转为小写，这与 rehype-slug 的行为一致
+  let processed = text.toLowerCase();
+  
+  // 步骤3: 根据不同情况处理
+  if (hasNumberPrefix) {
+    // 对带序号标题进行特殊处理
+    processed = processed.replace(/^(\d+)[\.\s]+(.+)$/, (_, num, rest) => {
+      // 保留数字前缀并将空格替换为连字符
+      return `${num}-${rest.replace(/[^\p{L}\p{N}]+/gu, '-')}`;
+    });
+    // 清理多余的连字符
+    processed = processed.replace(/-+/g, '-').replace(/^-|-$/g, '');
+  } else {
+    // 对其他标题（如函数名）进行标准 rehype-slug 处理
+    processed = processed.replace(/[^\p{L}\p{N}]+/gu, '');
+  }
+  
+  return processed;
 };
 
 const MarkdownRenderer = ({ content }) => {
@@ -153,25 +173,26 @@ const MarkdownRenderer = ({ content }) => {
           className="markdown-link"
         />
       );
+    },
+    // 自定义列表渲染
+    ul({ node, ordered, ...props }) {
+      return <ul className="markdown-list" {...props} />;
+    },
+    ol({ node, ordered, ...props }) {
+      return <ol className="markdown-list" {...props} />;
+    },
+    li({ node, ordered, ...props }) {
+      return <li className="markdown-list-item" {...props} />;
     }
   };
 
   return (
-    <div className="prose prose-sm prose-gray max-w-none dark:prose-invert">
+    <div className="prose prose-sm prose-gray max-w-none dark:prose-invert markdown-container">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
           rehypeRaw,
           rehypeSlug,
-          [rehypeAutolinkHeadings, { 
-            behavior: 'append',
-            content: {
-              type: 'element',
-              tagName: 'span',
-              properties: { className: ['anchor-icon'] },
-              children: [{ type: 'text', value: ' #' }]
-            }
-          }]
         ]}
         components={components}
       >

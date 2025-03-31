@@ -154,17 +154,7 @@ const PostDetailClient = ({ postId }) => {
           </div>
         )}
 
-        {/* 封面图 */}
-        {post.coverImage && (
-          <div className="relative w-full h-64 md:h-96 mb-8">
-            <Image 
-              src={post.coverImage} 
-              alt={post.title} 
-              fill
-              className="object-cover rounded-lg"
-            />
-          </div>
-        )}
+        {/* 封面图部分被移除 */}
       </header>
 
       {/* 文章主体与目录 */}
@@ -173,7 +163,7 @@ const PostDetailClient = ({ postId }) => {
         <TableOfContents content={post.content} />
         
         {/* 文章内容 */}
-        <div className="flex-1 prose prose-lg prose-blue dark:prose-invert max-w-none mb-12">
+        <div className="flex-1 prose prose-lg prose-blue dark:prose-invert max-w-none mb-12 pt-0 mt-0">
           <MarkdownRenderer content={post.content} />
         </div>
       </div>
