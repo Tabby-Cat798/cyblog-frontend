@@ -13,9 +13,10 @@ export async function GET(request) {
     const tag = searchParams.get('tag');
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const status = searchParams.get('status') || 'published'; // 添加状态参数，默认为published
     
     // 创建查询条件
-    const query = {};
+    const query = { status: status }; // 默认筛选已发布文章
     
     if (tag) {
       query.tags = tag;
