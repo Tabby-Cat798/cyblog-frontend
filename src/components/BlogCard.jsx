@@ -15,12 +15,25 @@ const BlogCard = ({ post }) => {
     viewCount = 0
   } = post;
 
-  // 格式化日期
-  const formattedDate = new Date(createdAt).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // 格式化日期 - 处理ISO格式时间
+  const formatDate = (dateString) => {
+    try {
+      // 解析ISO格式时间字符串为Date对象
+      const date = new Date(dateString);
+      // 使用Date对象原生方法转换为正确的北京时区日期
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC' // 使用UTC时区
+      });
+    } catch (error) {
+      console.error('日期格式化错误:', error);
+      return dateString;
+    }
+  };
+
+  const formattedDate = formatDate(createdAt);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
@@ -76,4 +89,4 @@ const BlogCard = ({ post }) => {
   );
 };
 
-export default BlogCard; 
+export default BlogCard;

@@ -95,11 +95,25 @@ const PostDetailClient = ({ postId }) => {
     );
   }
 
-  const formattedDate = new Date(post.createdAt).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  // 格式化日期 - 处理ISO格式时间
+  const formatDate = (dateString) => {
+    try {
+      // 解析ISO格式时间字符串为Date对象
+      const date = new Date(dateString);
+      // 使用Date对象原生方法转换为正确的北京时区日期
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC' // 使用UTC时区
+      });
+    } catch (error) {
+      console.error('日期格式化错误:', error);
+      return dateString;
+    }
+  };
+
+  const formattedDate = formatDate(post.createdAt);
 
   // 模拟评论数据
   const mockComments = [
