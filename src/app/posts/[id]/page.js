@@ -5,9 +5,10 @@ export const metadata = {
   description: '阅读完整的博客文章内容',
 };
 
-export default function PostDetail({ params }) {
+export default async function PostDetail(props) {
+  const params = await props.params;
   const { id } = params;
-  
+
   return (
     <main className="container mx-auto px-4 py-8">
       <PostDetailClient postId={id} />
