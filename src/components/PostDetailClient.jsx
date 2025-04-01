@@ -4,17 +4,28 @@ import Image from 'next/image';
 import Link from 'next/link';
 import MarkdownRenderer from './MarkdownRenderer';
 import TableOfContents from './TableOfContents';
+import CommentSection from './CommentSection';
+import { useSettings } from '@/lib/SettingsContext';
 
 const PostDetailClient = ({ postId }) => {
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [comment, setComment] = useState('');
   const [viewCount, setViewCount] = useState(0);
+
+  // 获取全局设置
+  const { settings } = useSettings();
+  
+  // 确定是否显示阅读量和评论
+  const showViewCount = settings?.articles?.defaultShowViewCount ?? true;
+  const allowComments = settings?.articles?.defaultAllowComments ?? true;
 
   // 更新阅览量的函数
   const incrementViewCount = async (id) => {
     try {
+      // 只有在允许显示阅读量时才更新阅读量
+      if (!showViewCount) return;
+      
       const response = await fetch(`/api/posts/${id}/view`, {
         method: 'POST',
         headers: {
@@ -55,14 +66,7 @@ const PostDetailClient = ({ postId }) => {
     if (postId) {
       fetchPost();
     }
-  }, [postId]);
-
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    // 评论提交逻辑（未实现）
-    alert('评论功能尚未实现');
-    setComment('');
-  };
+  }, [postId, showViewCount]);
 
   if (isLoading) {
     return (
@@ -115,22 +119,6 @@ const PostDetailClient = ({ postId }) => {
 
   const formattedDate = formatDate(post.createdAt);
 
-  // 模拟评论数据
-  const mockComments = [
-    {
-      id: 1,
-      author: '用户A',
-      content: '这篇文章很有帮助，感谢分享！',
-      createdAt: new Date(Date.now() - 86400000 * 2) // 2天前
-    },
-    {
-      id: 2,
-      author: '用户B',
-      content: '文章内容详实，讲解清晰，期待更多相关内容。',
-      createdAt: new Date(Date.now() - 86400000) // 1天前
-    }
-  ];
-
   return (
     <article className="max-w-5xl mx-auto">
       {/* 文章头部 */}
@@ -145,13 +133,15 @@ const PostDetailClient = ({ postId }) => {
             <span>{formattedDate}</span>
           </span>
           
-          <span className="mr-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span>{viewCount} 次阅读</span>
-          </span>
+          {showViewCount && (
+            <span className="mr-4 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>{viewCount} 次阅读</span>
+            </span>
+          )}
         </div>
 
         {/* 标签 */}
@@ -182,46 +172,8 @@ const PostDetailClient = ({ postId }) => {
         </div>
       </div>
 
-      {/* 评论区 */}
-      <section className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <h3 className="text-2xl font-bold mb-8">评论 ({mockComments.length})</h3>
-        
-        {/* 评论列表 */}
-        <div className="space-y-6 mb-10">
-          {mockComments.map(comment => (
-            <div key={comment.id} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <div className="font-medium">{comment.author}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {comment.createdAt.toLocaleDateString('zh-CN')}
-                </div>
-              </div>
-              <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
-            </div>
-          ))}
-        </div>
-        
-        {/* 评论表单 */}
-        <form onSubmit={handleCommentSubmit} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
-          <h4 className="text-xl font-medium mb-4">发表评论</h4>
-          <div className="mb-4">
-            <textarea
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              rows="4"
-              placeholder="写下您的评论..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              required
-            ></textarea>
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            提交评论
-          </button>
-        </form>
-      </section>
+      {/* 使用自定义评论组件，根据全局设置决定是否显示 */}
+      {allowComments && <CommentSection postId={postId} />}
     </article>
   );
 };

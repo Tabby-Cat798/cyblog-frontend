@@ -9,8 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@tailwindcss/typography": "^0.5.16",
+    "ali-oss": "^6.22.0",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.0.10",
     "mongodb": "^6.15.0",
     "next": "15.2.4",
+    "next-auth": "^4.24.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

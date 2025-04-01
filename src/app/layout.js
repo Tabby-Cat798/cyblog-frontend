@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/lib/auth";
+import { SettingsProvider } from "@/lib/SettingsContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,15 +22,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="zh-CN">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
-      >
-        <Header />
-        <div className="mt-20 flex-grow">
-          {children}
-        </div>
-        <Footer />
+    <html lang="zh-CN" className="scroll-smooth">
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+        <AuthProvider>
+          <SettingsProvider>
+            <Header />
+            <main className="flex-1 pt-16">
+              {children}
+            </main>
+            <Footer />
+          </SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

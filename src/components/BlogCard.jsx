@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSettings } from '@/lib/SettingsContext';
 
 const BlogCard = ({ post }) => {
   const {
@@ -14,6 +15,12 @@ const BlogCard = ({ post }) => {
     status,
     viewCount = 0
   } = post;
+
+  // 从设置上下文获取全局设置
+  const { settings } = useSettings();
+  
+  // 确定是否显示阅读量
+  const showViewCount = settings?.articles?.defaultShowViewCount ?? true;
 
   // 添加图片加载状态
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -101,14 +108,16 @@ const BlogCard = ({ post }) => {
         </p>
         
         <div className="flex justify-between items-center mt-auto text-sm text-gray-500 dark:text-gray-400">
-          <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span>{viewCount}</span>
-          </div>
-          <span>{formattedDate}</span>
+          {showViewCount && (
+            <div className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>{viewCount}</span>
+            </div>
+          )}
+          <span className={showViewCount ? '' : 'mr-auto'}>{formattedDate}</span>
         </div>
       </div>
     </div>
