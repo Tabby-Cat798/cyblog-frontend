@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import BlogCard from './BlogCard';
-import BlogCardSkeleton from './BlogCardSkeleton';
 
 const BlogList = ({ posts = [] }) => {
   // 加载状态
@@ -15,11 +14,11 @@ const BlogList = ({ posts = [] }) => {
       // 如果没有文章，仍然显示为加载中一段时间，然后显示"暂无文章"
       const timer = setTimeout(() => {
         setIsLoading(false);
-      }, 1000);
+      }, 300);
       return () => clearTimeout(timer);
     }
     
-    // 模拟数据加载
+    // 简短的加载延迟
     const loadingTimer = setTimeout(() => {
       setIsLoading(false);
       
@@ -32,18 +31,17 @@ const BlogList = ({ posts = [] }) => {
           setVisiblePosts(prev => [...prev, post]);
         }, 100 * index); // 每隔100ms添加一个博文
       });
-    }, 1000); // 模拟加载延迟
+    }, 300); // 减少加载延迟
     
     return () => clearTimeout(loadingTimer);
   }, [posts]);
   
-  // 显示骨架屏
+  // 显示简单的加载中效果
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, index) => (
-          <BlogCardSkeleton key={index} />
-        ))}
+      <div className="w-full py-20 text-center">
+        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
       </div>
     );
   }
