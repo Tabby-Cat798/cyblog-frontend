@@ -22,8 +22,16 @@ async function getInitialPosts() {
     // 获取总文章数
     const total = await db.collection('articles').countDocuments({ status: 'published' });
     
+    // 序列化MongoDB对象，确保可以传递给客户端组件
+    const serializedPosts = posts.map(post => ({
+      ...post,
+      _id: post._id.toString(), // 将ObjectId转换为字符串
+      createdAt: post.createdAt instanceof Date ? post.createdAt.toISOString() : post.createdAt,
+      updatedAt: post.updatedAt instanceof Date ? post.updatedAt.toISOString() : post.updatedAt
+    }));
+    
     return {
-      posts,
+      posts: serializedPosts,
       pagination: {
         total,
         page: 1,

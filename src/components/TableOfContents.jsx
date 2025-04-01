@@ -77,29 +77,29 @@ const TableOfContents = ({ content }) => {
       if (firstHeading) {
         console.log('内容渲染完成，初始化目录');
         
-        // 如果URL没有锚点，重定向到第一个标题
-        if (!window.location.hash && headings.length > 0) {
-          console.log('URL没有锚点，重定向到第一个标题:', headings[0].id);
-          // 使用 replaceState 而不是直接修改 hash，避免添加浏览历史记录
-          const newUrl = new URL(window.location);
-          newUrl.hash = headings[0].id;
-          window.history.replaceState({}, '', newUrl);
+        // // 如果URL没有锚点，重定向到第一个标题
+        // if (!window.location.hash && headings.length > 0) {
+        //   console.log('URL没有锚点，重定向到第一个标题:', headings[0].id);
+        //   // 使用 replaceState 而不是直接修改 hash，避免添加浏览历史记录
+        //   const newUrl = new URL(window.location);
+        //   newUrl.hash = headings[0].id;
+        //   window.history.replaceState({}, '', newUrl);
           
-          // 将第一个标题设为活动项
-          setActiveId(headings[0].id);
+        //   // 将第一个标题设为活动项
+        //   setActiveId(headings[0].id);
           
-          // 平滑滚动到第一个标题位置
-          setTimeout(() => {
-            const headerOffset = 100;
-            const elementPosition = firstHeading.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        //   // 平滑滚动到第一个标题位置
+        //   setTimeout(() => {
+        //     const headerOffset = 100;
+        //     const elementPosition = firstHeading.getBoundingClientRect().top;
+        //     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
             
-            window.scrollTo({
-              top: offsetPosition,
-              behavior: 'smooth'
-            });
-          }, 100);
-        }
+        //     window.scrollTo({
+        //       top: offsetPosition,
+        //       behavior: 'smooth'
+        //     });
+        //   }, 100);
+        // }
         
         initializeTableOfContents(headings);
       } else {
