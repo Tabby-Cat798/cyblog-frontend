@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -14,6 +14,21 @@ const BlogCard = ({ post }) => {
     status,
     viewCount = 0
   } = post;
+
+  // 添加图片加载状态
+  const [imageLoaded, setImageLoaded] = useState(false);
+  // 添加内容渐入效果状态
+  const [contentVisible, setContentVisible] = useState(false);
+
+  // 使用useEffect实现内容的延迟渐入
+  useEffect(() => {
+    // 短暂延迟后显示内容，创建渐入效果
+    const timer = setTimeout(() => {
+      setContentVisible(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // 格式化日期 - 处理ISO格式时间
   const formatDate = (dateString) => {
@@ -36,14 +51,25 @@ const BlogCard = ({ post }) => {
   const formattedDate = formatDate(createdAt);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 flex flex-col h-full transform ${
+      contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    }`}>
       <div className="relative h-48 w-full">
+        {/* 图片加载骨架 */}
+        <div className={`absolute inset-0 bg-gray-200 dark:bg-gray-700 ${
+          imageLoaded ? 'opacity-0' : 'opacity-100 animate-pulse'
+        } transition-opacity duration-500`} />
+        
         {coverImage ? (
           <Image
             src={coverImage}
             alt={title}
             fill
-            className="object-cover"
+            className={`object-cover transition-opacity duration-500 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoadingComplete={() => setImageLoaded(true)}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
           <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

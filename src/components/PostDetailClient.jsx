@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import MarkdownRenderer from './MarkdownRenderer';
 import TableOfContents from './TableOfContents';
+import PostDetailSkeleton from './PostDetailSkeleton';
 
 const PostDetailClient = ({ postId }) => {
   const [post, setPost] = useState(null);
@@ -11,6 +12,8 @@ const PostDetailClient = ({ postId }) => {
   const [error, setError] = useState(null);
   const [comment, setComment] = useState('');
   const [viewCount, setViewCount] = useState(0);
+  // 添加内容渐入状态
+  const [contentVisible, setContentVisible] = useState(false);
 
   // 更新阅览量的函数
   const incrementViewCount = async (id) => {
@@ -45,6 +48,11 @@ const PostDetailClient = ({ postId }) => {
         
         // 文章加载成功后，增加阅览量
         await incrementViewCount(postId);
+        
+        // 文章加载完成后，短暂延迟显示内容，创建渐入效果
+        setTimeout(() => {
+          setContentVisible(true);
+        }, 100);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -64,13 +72,9 @@ const PostDetailClient = ({ postId }) => {
     setComment('');
   };
 
+  // 显示骨架屏
   if (isLoading) {
-    return (
-      <div className="w-full py-20 text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">加载中...</p>
-      </div>
-    );
+    return <PostDetailSkeleton />;
   }
 
   if (error) {
@@ -132,7 +136,9 @@ const PostDetailClient = ({ postId }) => {
   ];
 
   return (
-    <article className="max-w-5xl mx-auto">
+    <article className={`max-w-5xl mx-auto transition-all duration-700 ${
+      contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+    }`}>
       {/* 文章头部 */}
       <header className="flex flex-col items-center text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
@@ -167,8 +173,6 @@ const PostDetailClient = ({ postId }) => {
             ))}
           </div>
         )}
-
-        {/* 封面图部分被移除 */}
       </header>
 
       {/* 文章主体与目录 */}
@@ -202,25 +206,25 @@ const PostDetailClient = ({ postId }) => {
         </div>
         
         {/* 评论表单 */}
-        <form onSubmit={handleCommentSubmit} className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
-          <h4 className="text-xl font-medium mb-4">发表评论</h4>
-          <div className="mb-4">
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+          <h4 className="text-xl font-semibold mb-4">发表评论</h4>
+          <form onSubmit={handleCommentSubmit}>
             <textarea
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 mb-4"
               rows="4"
-              placeholder="写下您的评论..."
+              placeholder="写下你的评论..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               required
             ></textarea>
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            提交评论
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors float-right"
+            >
+              发表评论
+            </button>
+          </form>
+        </div>
       </section>
     </article>
   );
