@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -43,59 +43,7 @@ const generateId = (text) => {
 };
 
 const MarkdownRenderer = ({ content }) => {
-  const [visibleContent, setVisibleContent] = useState('');
-  const [isRendering, setIsRendering] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
-
-  // 渐进式内容加载效果
-  useEffect(() => {
-    // 如果内容为空，直接返回
-    if (!content || content.length === 0) {
-      setIsRendering(false);
-      return;
-    }
-    
-    // 分块加载内容，每块约2000字符
-    const chunkSize = 2000;
-    const contentLength = content.length;
-    let currentLength = 0;
-    
-    // 设置渲染标志
-    setIsRendering(true);
-    
-    // 创建一个递归函数来逐步加载内容
-    const loadNextChunk = () => {
-      if (currentLength >= contentLength) {
-        setIsRendering(false);
-        return;
-      }
-      
-      // 计算下一个块的大小
-      let nextChunk = Math.min(currentLength + chunkSize, contentLength);
-      
-      // 尝试找到段落边界，避免在段落中间断开
-      if (nextChunk < contentLength) {
-        const paragraphEnd = content.indexOf('\n\n', nextChunk - 100);
-        if (paragraphEnd !== -1 && paragraphEnd < nextChunk + 100) {
-          nextChunk = paragraphEnd + 2;
-        }
-      }
-      
-      // 更新可见内容
-      setVisibleContent(content.substring(0, nextChunk));
-      currentLength = nextChunk;
-      
-      // 如果还有内容需要加载，则安排下一次更新
-      if (currentLength < contentLength) {
-        setTimeout(loadNextChunk, 50);
-      } else {
-        setIsRendering(false);
-      }
-    };
-    
-    // 开始加载第一块
-    loadNextChunk();
-  }, [content]);
 
   // 复制代码到剪贴板的函数
   const copyToClipboard = async (text, id) => {
@@ -239,14 +187,7 @@ const MarkdownRenderer = ({ content }) => {
   };
 
   return (
-    <div className="prose prose-sm prose-gray max-w-none dark:prose-invert markdown-container relative">
-      {/* 渲染进度指示器 */}
-      {isRendering && (
-        <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white px-3 py-1 rounded-full text-sm animate-pulse">
-          渲染中...
-        </div>
-      )}
-      
+    <div className="prose prose-sm prose-gray max-w-none dark:prose-invert markdown-container">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
@@ -255,7 +196,7 @@ const MarkdownRenderer = ({ content }) => {
         ]}
         components={components}
       >
-        {visibleContent}
+        {content}
       </ReactMarkdown>
     </div>
   );
