@@ -1,6 +1,13 @@
-import HomeClient from "@/components/HomeClient";
+import HomeServer from "@/components/HomeServer";
 
-export default function Home() {
+// 设置ISR重新验证时间为5分钟
+export const revalidate = 60;
+
+export default async function Home() {
+  // 从API获取初始文章数据（这会在构建时和重新验证时执行）
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/posts?page=1&limit=9`);
+  const data = await response.json();
+  
   return (
     <main className="container mx-auto px-4 py-8">
       <section className="mb-12 text-center">
@@ -14,7 +21,7 @@ export default function Home() {
         <h2 className="text-2xl font-bold mb-8 pb-2 border-b border-gray-200 dark:border-gray-700">
           最新文章
         </h2>
-        <HomeClient />
+        <HomeServer initialData={data} />
       </section>
     </main>
   );
