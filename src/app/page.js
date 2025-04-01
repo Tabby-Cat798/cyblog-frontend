@@ -1,12 +1,54 @@
+import clientPromise from '../lib/mongodb';
 import HomeServer from "@/components/HomeServer";
 
-// 设置ISR重新验证时间为5分钟
+// 设置ISR重新验证时间为1分钟
 export const revalidate = 60;
 
+// 从数据库直接获取数据而非通过API
+async function getInitialPosts() {
+  try {
+    // 尝试直接从MongoDB获取数据
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB || 'blogs');
+    
+    // 获取文章并按创建时间降序排序
+    const posts = await db
+      .collection('articles')
+      .find({ status: 'published' })
+      .sort({ createdAt: -1 })
+      .limit(9)
+      .toArray();
+    
+    // 获取总文章数
+    const total = await db.collection('articles').countDocuments({ status: 'published' });
+    
+    return {
+      posts,
+      pagination: {
+        total,
+        page: 1,
+        limit: 9,
+        pages: Math.ceil(total / 9)
+      }
+    };
+  } catch (error) {
+    console.error('直接获取文章数据失败:', error);
+    // 返回空数据
+    return {
+      posts: [],
+      pagination: {
+        total: 0,
+        page: 1,
+        limit: 9,
+        pages: 0
+      }
+    };
+  }
+}
+
 export default async function Home() {
-  // 从API获取初始文章数据（这会在构建时和重新验证时执行）
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/posts?page=1&limit=9`);
-  const data = await response.json();
+  // 直接从数据库获取数据，而不是通过API
+  const data = await getInitialPosts();
   
   return (
     <main className="container mx-auto px-4 py-8">

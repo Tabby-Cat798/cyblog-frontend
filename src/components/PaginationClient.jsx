@@ -5,7 +5,7 @@ import BlogList from './BlogList';
 // 客户端分页组件，处理分页交互和数据获取
 export default function PaginationClient({ initialPage = 1, totalPages = 1, initialData }) {
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [posts, setPosts] = useState(initialData.posts);
+  const [posts, setPosts] = useState(initialData?.posts || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,11 +22,12 @@ export default function PaginationClient({ initialPage = 1, totalPages = 1, init
         throw new Error('获取文章失败');
       }
       const data = await response.json();
-      setPosts(data.posts);
+      setPosts(data.posts || []);
       setCurrentPage(newPage);
       // 滚动到页面顶部
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
+      console.error('分页获取文章失败:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
