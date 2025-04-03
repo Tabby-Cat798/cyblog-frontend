@@ -10,7 +10,7 @@ export default async function PostDetail(props) {
   const { id } = params;
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4 py-8 pt-8">
       <PostDetailClient postId={id} />
     </main>
   );

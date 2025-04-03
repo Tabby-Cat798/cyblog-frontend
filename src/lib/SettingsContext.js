@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
 // 创建设置上下文
 const SettingsContext = createContext();
@@ -11,7 +11,7 @@ const defaultSettings = {
     defaultShowCommentCount: true,
     defaultAllowComments: true
   },
-  isLoading: true
+  pageTitle: ""
 };
 
 // 设置提供者组件
@@ -27,7 +27,11 @@ export function SettingsProvider({ children }) {
         const response = await fetch('/api/settings');
         if (response.ok) {
           const data = await response.json();
-          setSettings(data);
+          // 合并获取的设置与默认pageTitle
+          setSettings(prev => ({
+            ...data,
+            pageTitle: prev.pageTitle
+          }));
         }
       } catch (error) {
         console.error('获取设置失败:', error);
@@ -39,7 +43,12 @@ export function SettingsProvider({ children }) {
 
     fetchSettings();
   }, []);
-
+  
+  // 获取页面标题 - 使用useCallback稳定函数引用
+  const setPageTitle = useCallback((title) => {
+    setSettings(prev => ({...prev, pageTitle: title}));
+  }, []);
+  
   // 更新设置的函数
   const updateSettings = async (newSettings) => {
     try {
@@ -54,7 +63,11 @@ export function SettingsProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
-        setSettings(data);
+        // 保留当前的pageTitle
+        setSettings(prev => ({
+          ...data,
+          pageTitle: prev.pageTitle
+        }));
         return { success: true };
       } else {
         return { success: false, error: '更新设置失败' };
@@ -71,7 +84,8 @@ export function SettingsProvider({ children }) {
   const value = {
     settings,
     isLoading,
-    updateSettings
+    updateSettings,
+    setPageTitle
   };
 
   return (

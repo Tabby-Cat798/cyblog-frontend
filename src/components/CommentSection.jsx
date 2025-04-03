@@ -21,48 +21,108 @@ const formatDate = (dateString) => {
 };
 
 // 单条评论组件
-const CommentItem = ({ comment, onReply }) => {
+const CommentItem = ({ comment, onReply, depth = 0 }) => {
+  // 限制嵌套层级为3
+  const maxDepth = 3;
+  
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-      <div className="flex justify-between mb-2">
-        <div className="flex items-center">
+    <div className={`${depth === 0 ? 'border-b border-gray-100 dark:border-gray-800 pb-4' : ''}`}>
+      <div className="flex items-start space-x-3">
+        {/* 用户头像 */}
+        <div className="flex-shrink-0">
           {comment.user?.avatar ? (
             <Image
               src={comment.user.avatar}
               alt={comment.user.name || "用户"}
-              width={32}
-              height={32}
-              className="rounded-full mr-2"
+              width={36}
+              height={36}
+              className="rounded-full"
             />
           ) : (
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white mr-2">
+            <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white">
               {(comment.user?.name || '匿名')[0].toUpperCase()}
             </div>
           )}
-          <div className="font-medium">
-            {comment.user?.name || '匿名用户'}
+        </div>
+        
+        {/* 评论内容 */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center mb-1">
+            <div className="font-medium text-gray-900 dark:text-gray-100">
+              {comment.user?.name || '匿名用户'}
+            </div>
+            <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              {formatDate(comment.createdAt)}
+            </div>
           </div>
+          <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2">{comment.content}</div>
+          <button
+            onClick={() => onReply(comment)}
+            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            回复
+          </button>
         </div>
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          {formatDate(comment.createdAt)}
-        </div>
-      </div>
-      <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{comment.content}</p>
-      <div className="mt-2 flex justify-end">
-        <button
-          onClick={() => onReply(comment)}
-          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-        >
-          回复
-        </button>
       </div>
       
-      {/* 如果有子评论，递归渲染 */}
+      {/* 子评论区域 */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-6 mt-3 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
-          {comment.replies.map((reply) => (
-            <CommentItem key={reply._id} comment={reply} onReply={onReply} />
-          ))}
+        <div className={`pl-6 mt-3 ${depth < maxDepth ? '' : 'pl-6 pt-2'}`}>
+          {depth < maxDepth ? (
+            // 正常嵌套展示子评论
+            comment.replies.map((reply) => (
+              <div key={reply._id} className="mt-3">
+                <CommentItem comment={reply} onReply={onReply} depth={depth + 1} />
+              </div>
+            ))
+          ) : (
+            // 超过最大深度，平铺展示
+            <div className="space-y-3 pt-2">
+              {comment.replies.map((reply) => (
+                <div key={reply._id} className="border-t border-gray-100 dark:border-gray-800 pt-3">
+                  <div className="flex items-start space-x-3">
+                    {/* 用户头像 */}
+                    <div className="flex-shrink-0">
+                      {reply.user?.avatar ? (
+                        <Image
+                          src={reply.user.avatar}
+                          alt={reply.user.name || "用户"}
+                          width={28}
+                          height={28}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                          {(reply.user?.name || '匿名')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 评论内容 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center mb-1">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                          {reply.user?.name || '匿名用户'}
+                        </div>
+                        <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(reply.createdAt)}
+                        </div>
+                      </div>
+                      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-2">
+                        {reply.content}
+                      </div>
+                      <button
+                        onClick={() => onReply(reply)}
+                        className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        回复
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -280,35 +340,36 @@ export default function CommentSection({ postId }) {
   }, [postId]);
   
   return (
-    <section className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
-      <h3 className="text-2xl font-bold mb-8">评论 ({comments.length})</h3>
+    <section className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <h3 className="text-xl font-bold mb-6">评论 ({comments.length})</h3>
       
       {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+        <div className="flex justify-center items-center py-6">
+          <div className="inline-block h-6 w-6 animate-spin rounded-full border-3 border-solid border-blue-500 border-r-transparent"></div>
           <p className="ml-2">加载评论中...</p>
         </div>
       ) : error ? (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg mb-6">
           加载评论失败: {error}
         </div>
       ) : comments.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-6 text-gray-500 dark:text-gray-400 mb-6">
           还没有评论，成为第一个评论的人吧！
         </div>
       ) : (
-        <div className="space-y-6 mb-10">
+        <div className="divide-y divide-gray-100 dark:divide-gray-800 space-y-0 mb-8">
           {comments.map(comment => (
-            <CommentItem 
-              key={comment._id} 
-              comment={comment} 
-              onReply={handleReply}
-            />
+            <div key={comment._id} className="py-4">
+              <CommentItem 
+                comment={comment} 
+                onReply={handleReply}
+              />
+            </div>
           ))}
         </div>
       )}
       
-      <div id="comment-form">
+      <div id="comment-form" className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
         <CommentForm 
           postId={postId} 
           onCommentSubmitted={fetchComments} 

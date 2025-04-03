@@ -6,52 +6,49 @@ import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSun, faMoon, faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/lib/auth';
+import { useSettings } from '@/lib/SettingsContext';
 
 const Header = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrollDirection, setScrollDirection] = useState("up");
+  const [lastScrollY, setLastScrollY] = useState(0);
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
+  const { settings } = useSettings();
 
-  // 切换暗色模式
-  const toggleDarkMode = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-      setIsDarkMode(false);
-    } else {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-      setIsDarkMode(true);
-    }
-  };
-
-  // 检查系统主题偏好或已保存的主题
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark =
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark");
-      setIsDarkMode(true);
-    }
-  }, []);
+  const quote = "编程不仅仅是代码，更是一种艺术";
   
-  // 监听滚动事件，用于改变导航栏样式
+  const getPageTitle = () => {
+    if (settings.pageTitle) return settings.pageTitle;
+    
+    if (pathname === '/') return quote;
+    if (pathname === '/about') return "关于我们";
+    if (pathname.startsWith('/posts/')) return "文章详情";
+    if (pathname === '/posts') return "所有文章";
+    return "";
+  };
+  
   useEffect(() => {
-    // 初始化scrolled状态
     setScrolled(window.scrollY > 10);
+    setLastScrollY(window.scrollY);
     
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 10);
+      
+      if (currentScrollY > lastScrollY + 5) {
+        setScrollDirection("down");
+      } else if (currentScrollY < lastScrollY - 5) {
+        setScrollDirection("up");
+      }
+      
+      setLastScrollY(currentScrollY);
     };
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lastScrollY]);
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -60,56 +57,67 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
-            技术博客
+            CyBlog
           </Link>
-          
-          <nav className="hidden md:flex space-x-8">
-            <NavLink href="/" active={pathname === '/'}>首页</NavLink>
-            <NavLink href="/posts" active={pathname.startsWith('/posts')}>文章</NavLink>
-            <NavLink href="/about" active={pathname === '/about'}>关于</NavLink>
-            {user && <NavLink href="/profile" active={pathname === '/profile'}>我的</NavLink>}
-            {user && user.role === 'admin' && (
-              <div className="relative group">
-                <button className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                  管理
-                </button>
-                <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link
-                    href="/admin"
-                    className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    控制台
-                  </Link>
-                  <Link
-                    href="/admin/settings"
-                    className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    设置
-                  </Link>
+          <div className="flex-1 flex justify-center relative overflow-hidden h-10">
+            <nav className={`absolute inset-0 flex justify-center items-center space-x-8 transition-all duration-300 ease-in-out transform ${
+              scrollDirection === "down" && scrolled 
+                ? "opacity-0 -translate-y-full pointer-events-none" 
+                : "opacity-100 translate-y-0"
+            }`}>
+              <NavLink href="/" active={pathname === '/'}>首页</NavLink>
+              <NavLink href="/posts" active={pathname.startsWith('/posts')}>文章</NavLink>
+              <NavLink href="/about" active={pathname === '/about'}>关于</NavLink>
+              {user && user.role === 'admin' && (
+                <div className="relative group">
+                  <button className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
+                    管理
+                  </button>
+                  <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      控制台
+                    </Link>
+                    <Link
+                      href="/admin/settings"
+                      className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
+                    >
+                      设置
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            )}
-          </nav>
+              )}
+            </nav>
+            
+            <div className={`absolute inset-0 flex justify-center items-center transition-all duration-300 ease-in-out transform ${
+              scrollDirection === "down" && scrolled 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 translate-y-full pointer-events-none"
+            }`}>
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="relative px-4 py-1 rounded-full transition-all duration-200 hover:bg-blue-600 group"
+                aria-label="回到顶部"
+              >
+                <span className="text-lg text-gray-800 dark:text-gray-200 group-hover:text-white group-hover:opacity-0 transition-all">
+                  {getPageTitle()}
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  回到顶部
+                </span>
+              </button>
+            </div>
+          </div>
           
           <div className="flex items-center space-x-4">
-            {/* 主题切换按钮 */}
-            <button
-              aria-label="切换暗色模式"
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-gray-700/60 transition"
-            >
-              <FontAwesomeIcon
-                icon={isDarkMode ? faSun : faMoon}
-                className="w-5 h-5"
-              />
-            </button>
 
-            {/* 用户认证区域 */}
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
             ) : user ? (
               <div className="relative group">
-                <button className="flex items-center space-x-2">
+                <button href="/profile" className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                     {user.avatar ? (
                       <Image 
@@ -126,8 +134,8 @@ const Header = () => {
                   <span className="text-sm font-medium hidden sm:inline text-gray-700 dark:text-gray-300">{user.name}</span>
                 </button>
                 
-                {/* 下拉菜单 */}
-                <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-md shadow-lg hidden group-hover:block">
+                <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg hidden group-hover:block dark:bg-gray-800">
+                  <div className="absolute top-[-10px] left-0 right-0 h-[10px] bg-transparent"></div>
                   <Link 
                     href="/profile" 
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -151,7 +159,6 @@ const Header = () => {
               </Link>
             )}
             
-            {/* 移动端菜单按钮 */}
             <button
               aria-label="菜单"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -166,7 +173,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* 移动端导航菜单 */}
       <div
         className={`fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${
           isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -247,7 +253,6 @@ const Header = () => {
               </li>
             )}
             
-            {/* 移动端管理员链接 */}
             {user && user.role === 'admin' && (
               <>
                 <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -280,7 +285,6 @@ const Header = () => {
   );
 };
 
-// 导航链接组件
 const NavLink = ({ href, active, children }) => {
   return (
     <Link 

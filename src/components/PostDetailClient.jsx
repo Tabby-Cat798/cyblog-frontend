@@ -14,7 +14,7 @@ const PostDetailClient = ({ postId }) => {
   const [viewCount, setViewCount] = useState(0);
 
   // 获取全局设置
-  const { settings } = useSettings();
+  const { settings, setPageTitle } = useSettings();
   
   // 确定是否显示阅读量和评论
   const showViewCount = settings?.articles?.defaultShowViewCount ?? true;
@@ -54,6 +54,11 @@ const PostDetailClient = ({ postId }) => {
         setPost(data);
         setViewCount(data.viewCount || 0);
         
+        // 设置页面标题
+        if (data.title) {
+          setPageTitle(data.title);
+        }
+        
         // 文章加载成功后，增加阅览量
         await incrementViewCount(postId);
       } catch (err) {
@@ -66,6 +71,11 @@ const PostDetailClient = ({ postId }) => {
     if (postId) {
       fetchPost();
     }
+    
+    // 组件卸载时清除页面标题
+    return () => {
+      setPageTitle("");
+    };
   }, [postId, showViewCount]);
 
   if (isLoading) {
@@ -120,10 +130,10 @@ const PostDetailClient = ({ postId }) => {
   const formattedDate = formatDate(post.createdAt);
 
   return (
-    <article className="max-w-5xl mx-auto">
+    <article className="max-w-5xl mx-auto pt-8">
       {/* 文章头部 */}
-      <header className="flex flex-col items-center text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+      <header className="flex flex-col items-center text-center mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-6">{post.title}</h1>
         
         <div className="flex flex-wrap justify-center items-center text-gray-600 dark:text-gray-400 mb-6">
           <span className="mr-4 flex items-center">
