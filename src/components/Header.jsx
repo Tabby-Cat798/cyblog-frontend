@@ -1,21 +1,76 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSun, faMoon, faBars, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faMoon, faBars, faXmark, faList } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/lib/auth';
 import { useSettings } from '@/lib/SettingsContext';
+
+// 鼓励语数组
+const encouragements = [
+  "今天的知识是明天的财富",
+  "坚持学习，持续成长",
+  "挑战自我，超越极限",
+  "知识改变命运，学习成就未来",
+  "每天进步一点点，终有一天大不同"
+];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollDirection, setScrollDirection] = useState("up");
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [tableOfContents, setTableOfContents] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [encouragement, setEncouragement] = useState("");
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const { settings } = useSettings();
+  const isPostDetail = pathname.startsWith('/posts/');
+
+  // 获取随机鼓励语
+  useEffect(() => {
+    if (isPostDetail) {
+      const randomIndex = Math.floor(Math.random() * encouragements.length);
+      setEncouragement(encouragements[randomIndex]);
+    }
+  }, [isPostDetail]);
+
+  // 检测设备是否为移动端
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // 初始检查
+    checkIsMobile();
+    
+    // 窗口大小改变时重新检查
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // 获取文章目录
+  useEffect(() => {
+    if (isPostDetail) {
+      // 延迟获取目录，确保目录已经渲染完成
+      const timer = setTimeout(() => {
+        const headings = Array.from(document.querySelectorAll('article h2, article h3'))
+          .map(heading => ({
+            id: heading.id,
+            text: heading.textContent,
+            level: heading.tagName === 'H2' ? 2 : 3
+          }))
+          .filter(heading => heading.id); // 只保留有ID的标题
+        
+        setTableOfContents(headings.slice(0, 5)); // 只显示前5个目录项
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPostDetail]);
 
   const quote = "编程不仅仅是代码，更是一种艺术";
   
@@ -50,17 +105,70 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // 点击目录项
+  const handleTocItemClick = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      // 考虑导航栏高度，设置偏移量
+      const headerOffset = 100;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      // 关闭菜单
+      setIsMenuOpen(false);
+      
+      // 使用平滑滚动
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+  
+  // 显示移动端的鼓励语或目录
+  const renderMobileContent = () => {
+    if (!isPostDetail || !isMobile) return null;
+    
+    if (scrollDirection === "up" || !scrolled) {
+      // 向上滚动或在顶部时显示鼓励语
+      return (
+        <div className="text-center text-sm italic text-gray-600 dark:text-gray-400 hidden md:hidden">
+          {encouragement}
+        </div>
+      );
+    } else {
+      // 向下滚动时显示目录项
+      return (
+        <div className="hidden md:hidden">
+          {tableOfContents.length > 0 ? (
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="text-sm text-blue-600 dark:text-blue-400 flex items-center"
+            >
+              <FontAwesomeIcon icon={faList} className="mr-1" /> 查看目录
+            </button>
+          ) : null}
+        </div>
+      );
+    }
+  };
+
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
-    }`}>
+    <header 
+      className={`fixed top-0 left-0 right-0 z-[30] transition-all duration-300 ${
+        scrolled ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
+      }`}
+      suppressHydrationWarning
+    >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
             CyBlog
           </Link>
+          
           <div className="flex-1 flex justify-center relative overflow-hidden h-10">
-            <nav className={`absolute inset-0 flex justify-center items-center space-x-8 transition-all duration-300 ease-in-out transform ${
+            {/* 桌面导航 - 只在非移动端显示 */}
+            <nav className={`absolute inset-0 md:flex hidden justify-center items-center space-x-8 transition-all duration-300 ease-in-out transform ${
               scrollDirection === "down" && scrolled 
                 ? "opacity-0 -translate-y-full pointer-events-none" 
                 : "opacity-100 translate-y-0"
@@ -91,7 +199,11 @@ const Header = () => {
               )}
             </nav>
             
-            <div className={`absolute inset-0 flex justify-center items-center transition-all duration-300 ease-in-out transform ${
+            {/* 移动端鼓励语或目录 */}
+            {renderMobileContent()}
+            
+            {/* 桌面滚动标题 */}
+            <div className={`absolute inset-0 md:flex hidden justify-center items-center transition-all duration-300 ease-in-out transform ${
               scrollDirection === "down" && scrolled 
                 ? "opacity-100 translate-y-0" 
                 : "opacity-0 translate-y-full pointer-events-none"
@@ -112,7 +224,6 @@ const Header = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
             ) : user ? (
@@ -174,18 +285,24 @@ const Header = () => {
       </div>
 
       <div
-        className={`fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-gray-900/60 z-[999] transition-all duration-300 ${
           isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsMenuOpen(false)}
+        style={{ 
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)'
+        }}
+        suppressHydrationWarning
       ></div>
 
       <div
-        className={`fixed top-0 right-0 w-64 h-full bg-white dark:bg-gray-800 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 w-64 h-screen bg-white dark:bg-gray-800 shadow-lg z-[1000] transform transition-transform duration-300 ease-in-out overflow-y-auto ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        suppressHydrationWarning
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="sticky top-0 flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">菜单</h2>
           <button
             onClick={() => setIsMenuOpen(false)}
@@ -237,6 +354,27 @@ const Header = () => {
               </Link>
             </li>
             
+            {/* 如果是文章详情页，显示目录 */}
+            {isPostDetail && tableOfContents.length > 0 && (
+              <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p className="px-4 text-sm text-gray-500 dark:text-gray-400">文章目录</p>
+                <ul className="mt-2 space-y-1">
+                  {tableOfContents.map((heading) => (
+                    <li key={heading.id}>
+                      <button
+                        onClick={() => handleTocItemClick(heading.id)}
+                        className={`block w-full text-left py-1 px-4 text-sm rounded ${
+                          heading.level === 3 ? "pl-8" : "pl-4"
+                        } text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700`}
+                      >
+                        {heading.text}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            )}
+            
             {user && (
               <li>
                 <Link
@@ -285,6 +423,7 @@ const Header = () => {
   );
 };
 
+// 导航链接组件
 const NavLink = ({ href, active, children }) => {
   return (
     <Link 
