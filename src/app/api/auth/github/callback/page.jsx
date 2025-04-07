@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-export default function GitHubCallback() {
+// 创建一个独立的组件来包含useSearchParams
+function GitHubCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("处理中...");
@@ -119,5 +120,24 @@ export default function GitHubCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+// 主组件使用Suspense包裹内容组件
+export default function GitHubCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+          <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">GitHub登录</h1>
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">加载中...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <GitHubCallbackContent />
+    </Suspense>
   );
 } 
