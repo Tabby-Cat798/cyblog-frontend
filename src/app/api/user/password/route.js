@@ -37,13 +37,30 @@ export async function PATCH(request) {
     if (!user) {
       return NextResponse.json({ error: "用户不存在" }, { status: 404 });
     }
+    
+    // 检查是否为GitHub登录用户
+    if (user.github) {
+      return NextResponse.json(
+        { error: "GitHub账号用户无法修改密码" },
+        { status: 400 }
+      );
+    }
+    
+    // 检查是否存在密码字段
+    if (!user.password && !user.hashedPassword) {
+      return NextResponse.json(
+        { error: "当前账号未设置密码，无法使用此功能" },
+        { status: 400 }
+      );
+    }
 
     // 获取请求数据
     const requestData = await request.json();
     const { currentPassword, newPassword } = requestData;
 
     // 验证当前密码
-    if (!bcrypt.compareSync(currentPassword, user.hashedPassword)) {
+    const passwordField = user.hashedPassword || user.password; // 兼容不同的密码字段名
+    if (!bcrypt.compareSync(currentPassword, passwordField)) {
       return NextResponse.json({ error: "当前密码不正确" }, { status: 400 });
     }
 
@@ -59,15 +76,20 @@ export async function PATCH(request) {
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(newPassword, salt);
 
-    // 更新用户密码
+    // 更新用户密码 - 支持两种密码字段名
+    const updateFields = {
+      updatedAt: new Date(),
+    };
+    
+    if (user.hashedPassword !== undefined) {
+      updateFields.hashedPassword = hashedPassword;
+    } else {
+      updateFields.password = hashedPassword;
+    }
+
     await usersCollection.updateOne(
       { _id: new ObjectId(payload.id) },
-      {
-        $set: {
-          hashedPassword: hashedPassword,
-          updatedAt: new Date(),
-        },
-      }
+      { $set: updateFields }
     );
 
     return NextResponse.json({

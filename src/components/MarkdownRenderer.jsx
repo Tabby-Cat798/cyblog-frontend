@@ -118,6 +118,18 @@ const MarkdownRenderer = ({ content }) => {
       const id = generateId(children.toString());
       return <h3 id={id} {...props}>{children}</h3>;
     },
+    h4: ({ node, children, ...props }) => {
+      const id = generateId(children.toString());
+      return <h4 id={id} {...props}>{children}</h4>;
+    },
+    h5: ({ node, children, ...props }) => {
+      const id = generateId(children.toString());
+      return <h5 id={id} {...props}>{children}</h5>;
+    },
+    h6: ({ node, children, ...props }) => {
+      const id = generateId(children.toString());
+      return <h6 id={id} {...props}>{children}</h6>;
+    },
     // 增强图片渲染 - 修复嵌套问题
     img({ node, ...props }) {
       // 不再返回包装div，直接返回img元素

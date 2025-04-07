@@ -50,6 +50,10 @@ export function AuthProvider({ children }) {
       const data = await response.json();
       
       if (!response.ok) {
+        // 特殊处理：如果是GitHub用户
+        if (data.githubUser) {
+          throw new Error(data.error || '此账号需要使用GitHub登录');
+        }
         throw new Error(data.error || '登录失败');
       }
       
@@ -60,6 +64,33 @@ export function AuthProvider({ children }) {
       throw err;
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // GitHub登录
+  const githubLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/auth/github');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'GitHub登录初始化失败');
+      }
+      
+      // 重定向到GitHub授权页面
+      window.location.href = data.authUrl;
+      
+      // 注意：此处不会设置用户状态，因为页面会重定向到GitHub
+      // 用户状态将在回调处理后通过fetchCurrentUser获取
+      
+      return data;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      throw err;
     }
   };
   
@@ -115,36 +146,34 @@ export function AuthProvider({ children }) {
     }
   };
   
-  // 组件挂载时检查用户登录状态
+  // 组件挂载时获取用户信息
   useEffect(() => {
     fetchCurrentUser();
   }, []);
   
-  // 暴露给子组件的上下文
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    register,
-    logout,
-    fetchCurrentUser,
-  };
-  
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        logout,
+        register,
+        githubLogin,
+        fetchCurrentUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// 自定义Hook，便于组件中使用认证状态
+// 使用认证的钩子
 export function useAuth() {
   const context = useContext(AuthContext);
-  
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (context === null) {
+    throw new Error('useAuth必须在AuthProvider内部使用');
   }
-  
   return context;
 } 

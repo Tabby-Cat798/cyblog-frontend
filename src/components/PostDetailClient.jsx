@@ -26,16 +26,31 @@ const PostDetailClient = ({ postId }) => {
       // 只有在允许显示阅读量时才更新阅读量
       if (!showViewCount) return;
       
-      const response = await fetch(`/api/posts/${id}/view`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // 检查localStorage中是否已经记录了该文章的阅读
+      const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
       
-      if (response.ok) {
-        // 更新本地显示的阅览量
-        setViewCount(prev => prev + 1);
+      // 检查上次访问时间，如果超过24小时才算新的访问
+      const currentTime = new Date().getTime();
+      const lastViewTime = viewedPosts[id] || 0;
+      const twentyFourHours = 24 * 60 * 60 * 1000; // 24小时的毫秒数
+      
+      if (currentTime - lastViewTime > twentyFourHours) {
+        // 更新本地存储中的访问时间记录
+        viewedPosts[id] = currentTime;
+        localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+        
+        // 发送请求增加阅览量
+        const response = await fetch(`/api/posts/${id}/view`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          // 更新本地显示的阅览量
+          setViewCount(prev => prev + 1);
+        }
       }
     } catch (error) {
       console.error('增加阅览量失败:', error);
@@ -59,8 +74,11 @@ const PostDetailClient = ({ postId }) => {
           setPageTitle(data.title);
         }
         
-        // 文章加载成功后，增加阅览量
-        await incrementViewCount(postId);
+        // 在客户端环境下才执行增加阅览量的操作
+        if (typeof window !== 'undefined') {
+          // 文章加载成功后，增加阅览量
+          await incrementViewCount(postId);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -128,6 +146,9 @@ const PostDetailClient = ({ postId }) => {
   };
 
   const formattedDate = formatDate(post.createdAt);
+
+  // 检查是否为纯GitHub账号（无密码）
+  const isGithubOnlyAccount = post?.github && (!post.password && !post.hashedPassword);
 
   return (
     <article className="max-w-5xl mx-auto pt-8">

@@ -51,6 +51,11 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
             <div className="font-medium text-gray-900 dark:text-gray-100">
               {comment.user?.name || '匿名用户'}
             </div>
+            {comment.user?.role === 'admin' && (
+              <div className="ml-1.5 px-1.5 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-100 rounded">
+                管理员
+              </div>
+            )}
             <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">
               {formatDate(comment.createdAt)}
             </div>
@@ -104,6 +109,11 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
                         <div className="font-medium text-gray-900 dark:text-gray-100">
                           {reply.user?.name || '匿名用户'}
                         </div>
+                        {reply.user?.role === 'admin' && (
+                          <div className="ml-1.5 px-1.5 py-0.5 text-xs bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-100 rounded">
+                            管理员
+                          </div>
+                        )}
                         <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                           {formatDate(reply.createdAt)}
                         </div>

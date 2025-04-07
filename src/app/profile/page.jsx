@@ -199,7 +199,9 @@ export default function ProfilePage() {
             activeTab === "password"
               ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
               : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-          }`}
+          } ${user?.github ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={user?.github}
+          title={user?.github ? "GitHub登录用户无法修改密码" : ""}
         >
           修改密码
         </button>
@@ -331,68 +333,75 @@ export default function ProfilePage() {
       {/* 修改密码表单 */}
       {activeTab === "password" && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <form onSubmit={handlePasswordUpdate} className="space-y-6">
-            <div className="space-y-1">
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                当前密码
-              </label>
-              <input
-                type="password"
-                id="currentPassword"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
-                required
-              />
+          {user?.github ? (
+            <div className="p-4 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-md">
+              <h3 className="font-medium mb-2">无法修改密码</h3>
+              <p>您是通过GitHub账号登录的，无法设置或修改密码。如需使用密码登录，请使用相同邮箱注册一个新账户。</p>
             </div>
-            
-            <div className="space-y-1">
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                新密码
-              </label>
-              <input
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
-                required
-                minLength={6}
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                密码长度至少6位，建议使用字母、数字和符号的组合
-              </p>
-            </div>
-            
-            <div className="space-y-1">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                确认新密码
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
-                required
-              />
-            </div>
-            
-            <button
-              type="submit"
-              disabled={isUpdating}
-              className={`py-2 px-4 rounded-md text-white font-medium transition ${
-                isUpdating
-                  ? "bg-blue-400 dark:bg-blue-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-              }`}
-            >
-              {isUpdating ? "更新中..." : "更新密码"}
-            </button>
-          </form>
+          ) : (
+            <form onSubmit={handlePasswordUpdate} className="space-y-6">
+              <div className="space-y-1">
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  当前密码
+                </label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  name="currentPassword"
+                  value={formData.currentPassword}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-1">
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  新密码
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
+                  required
+                  minLength={6}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  密码长度至少6位，建议使用字母、数字和符号的组合
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  确认新密码
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 dark:bg-gray-700 dark:text-white"
+                  required
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className={`py-2 px-4 rounded-md text-white font-medium transition ${
+                  isUpdating
+                    ? "bg-blue-400 dark:bg-blue-600 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                }`}
+              >
+                {isUpdating ? "更新中..." : "更新密码"}
+              </button>
+            </form>
+          )}
         </div>
       )}
       
@@ -417,6 +426,21 @@ export default function ProfilePage() {
                     {user?.lastLogin ? new Date(user.lastLogin).toLocaleString() : "未知"}
                   </p>
                 </div>
+                {user?.github && (
+                  <div className="col-span-2 mt-2">
+                    <p className="text-gray-500 dark:text-gray-400">关联GitHub</p>
+                    <div className="flex items-center mt-1">
+                      <Image 
+                        src={user.avatar} 
+                        alt="GitHub头像" 
+                        width={24} 
+                        height={24}
+                        className="rounded-full mr-2"
+                      />
+                      <p className="text-gray-800 dark:text-white">{user.github.username}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

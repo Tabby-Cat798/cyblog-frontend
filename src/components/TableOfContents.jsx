@@ -6,15 +6,12 @@ import { useRouter } from 'next/navigation';
 const generateId = (text) => {
   if (!text) return '';
   
-  console.log('开始处理标题:', text);
-  
   // 步骤1: 特殊处理带序号的标题
   // 分析原始文本中是否有序号模式（如 "1. 盒模型"）
   const hasNumberPrefix = /^(\d+)[\.\s]+(.+)$/.test(text);
   
   // 步骤2: 转为小写，这与 rehype-slug 的行为一致
   let processed = text.toLowerCase();
-  console.log('转小写后:', processed);
   
   // 步骤3: 根据不同情况处理
   if (hasNumberPrefix) {
@@ -30,7 +27,6 @@ const generateId = (text) => {
     processed = processed.replace(/[^\p{L}\p{N}]+/gu, '');
   }
   
-  console.log('最终生成ID:', processed);
   return processed;
 };
 
@@ -45,19 +41,16 @@ const TableOfContents = ({ content }) => {
   const extractHeadings = (markdown) => {
     if (!markdown) return [];
     
-    // 匹配 # 开头的标题行
-    const headingRegex = /^(#{1,3})\s+(.+)$/gm;
+    // 匹配 # 开头的标题行，支持h1-h6所有级别
+    const headingRegex = /^(#{1,6})\s+(.+)$/gm;
     const headings = [];
     let match;
     
     while ((match = headingRegex.exec(markdown)) !== null) {
-      const level = match[1].length; // 标题级别 (# ## ###)
+      const level = match[1].length; // 标题级别 (# ## ### #### ##### ######)
       const text = match[2].trim();
       // 使用与MarkdownRenderer完全一致的ID生成逻辑
       const id = generateId(text);
-      
-      // 添加调试日志
-      console.log(`标题文本: "${text}" -> 生成ID: "${id}"`);
       
       headings.push({ level, text, id });
     }
@@ -75,35 +68,8 @@ const TableOfContents = ({ content }) => {
       const firstHeading = document.getElementById(headings[0].id);
       
       if (firstHeading) {
-        console.log('内容渲染完成，初始化目录');
-        
-        // // 如果URL没有锚点，重定向到第一个标题
-        // if (!window.location.hash && headings.length > 0) {
-        //   console.log('URL没有锚点，重定向到第一个标题:', headings[0].id);
-        //   // 使用 replaceState 而不是直接修改 hash，避免添加浏览历史记录
-        //   const newUrl = new URL(window.location);
-        //   newUrl.hash = headings[0].id;
-        //   window.history.replaceState({}, '', newUrl);
-          
-        //   // 将第一个标题设为活动项
-        //   setActiveId(headings[0].id);
-          
-        //   // 平滑滚动到第一个标题位置
-        //   setTimeout(() => {
-        //     const headerOffset = 100;
-        //     const elementPosition = firstHeading.getBoundingClientRect().top;
-        //     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-            
-        //     window.scrollTo({
-        //       top: offsetPosition,
-        //       behavior: 'smooth'
-        //     });
-        //   }, 100);
-        // }
-        
         initializeTableOfContents(headings);
       } else {
-        console.log('等待内容渲染完成...');
         setTimeout(checkContentReady, 100);
       }
     };
@@ -120,9 +86,6 @@ const TableOfContents = ({ content }) => {
       const element = document.getElementById(id);
       if (element) {
         headingElements[id] = element;
-        console.log(`找到标题元素: ${id} (级别: ${level})`);
-      } else {
-        console.log(`未找到标题元素: ${id} (级别: ${level})`);
       }
     });
 
@@ -210,8 +173,6 @@ const TableOfContents = ({ content }) => {
     // 尝试找到对应的标题元素
     const element = document.getElementById(id);
     if (element) {
-      console.log(`找到目标元素: #${id}`);
-      
       // 考虑导航栏高度，设置偏移量
       const headerOffset = 100;
       const elementPosition = element.getBoundingClientRect().top;
@@ -223,21 +184,11 @@ const TableOfContents = ({ content }) => {
         behavior: 'smooth'
       });
     } else {
-      console.log(`找不到ID为 "${id}" 的元素，尝试备用方案`);
-      
-      // 打印出页面上所有标题元素的ID，帮助调试
-      console.log('页面上所有标题元素的ID:');
-      document.querySelectorAll('h1, h2, h3').forEach(el => {
-        console.log(`- ${el.id}`);
-      });
-      
-      // 尝试一些常见的特殊情况处理
       // 1. 数字开头的ID可能有问题，尝试去掉数字
       const withoutNumber = id.replace(/^\d+-/, '');
       const elementWithoutNumber = document.getElementById(withoutNumber);
       
       if (elementWithoutNumber) {
-        console.log(`找到替代元素: #${withoutNumber}`);
         const headerOffset = 100;
         const elementPosition = elementWithoutNumber.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -250,7 +201,6 @@ const TableOfContents = ({ content }) => {
       }
       
       // 2. 最后使用传统的 hash 导航作为备用
-      console.log(`使用hash导航作为最终备用方案`);
       window.location.hash = id;
     }
     
@@ -269,48 +219,127 @@ const TableOfContents = ({ content }) => {
     return null;
   }
 
+  // 创建一个状态用于移动端目录的显示/隐藏
+  const [showMobileToc, setShowMobileToc] = useState(false);
+
   return (
-    <nav className="toc hidden lg:block">
-      <div className="sticky top-8 flex flex-col">
-        <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 py-1 z-10">目录</h4>
-        <div className="overflow-y-auto max-h-[calc(100vh-8rem)]">
-          <ul className="space-y-2 text-sm">
-            {headings.map((heading, index) => {
-              // 根据级别计算缩进
-              let paddingLeft = 0;
-              if (heading.level === 3) paddingLeft = 16;
-              else if (heading.level > 3) paddingLeft = 24;
-              
-              // 判断当前项是否为活动项
-              const isActive = activeId === heading.id;
-              
-              return (
-                <li 
-                  key={index} 
-                  style={{ paddingLeft: `${paddingLeft}px` }}
-                  className="transition-colors duration-200"
-                >
-                  <a
-                    href={`#${heading.id}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleClickHeading(heading.id);
-                    }}
-                    className={`block py-1 border-l-2 pl-2 ${
-                      isActive
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                    }`}
+    <>
+      {/* 桌面端目录 */}
+      <nav className="toc hidden lg:block">
+        <div className="sticky top-8 flex flex-col">
+          <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 py-1 z-10">目录</h4>
+          <div className="overflow-y-auto max-h-[calc(100vh-8rem)]">
+            <ul className="space-y-2 text-sm">
+              {headings.map((heading, index) => {
+                // 根据级别计算缩进
+                let paddingLeft = 0;
+                if (heading.level === 2) paddingLeft = 8;
+                else if (heading.level === 3) paddingLeft = 16;
+                else if (heading.level === 4) paddingLeft = 24;
+                else if (heading.level === 5) paddingLeft = 32;
+                else if (heading.level === 6) paddingLeft = 40;
+                
+                // 判断当前项是否为活动项
+                const isActive = activeId === heading.id;
+                
+                return (
+                  <li 
+                    key={index} 
+                    style={{ paddingLeft: `${paddingLeft}px` }}
+                    className="transition-colors duration-200"
                   >
-                    {heading.text}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+                    <a
+                      href={`#${heading.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleClickHeading(heading.id);
+                      }}
+                      className={`block py-1 border-l-2 pl-2 ${
+                        isActive
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                    >
+                      {heading.text}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
+      </nav>
+
+      {/* 移动端目录按钮和弹出层 */}
+      <div className="lg:hidden fixed bottom-20 right-4 z-30">
+        <button 
+          onClick={() => setShowMobileToc(!showMobileToc)}
+          className="bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
+          aria-label="显示目录"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+        </button>
       </div>
-    </nav>
+
+      {/* 移动端目录弹出层 */}
+      {showMobileToc && (
+        <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-end">
+          <div className="bg-white dark:bg-gray-900 w-3/4 h-full overflow-y-auto p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">目录</h4>
+              <button 
+                onClick={() => setShowMobileToc(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <ul className="space-y-3 text-sm">
+              {headings.map((heading, index) => {
+                // 根据级别计算缩进
+                let paddingLeft = 0;
+                if (heading.level === 2) paddingLeft = 8;
+                else if (heading.level === 3) paddingLeft = 16;
+                else if (heading.level === 4) paddingLeft = 24;
+                else if (heading.level === 5) paddingLeft = 32;
+                else if (heading.level === 6) paddingLeft = 40;
+                
+                // 判断当前项是否为活动项
+                const isActive = activeId === heading.id;
+                
+                return (
+                  <li 
+                    key={index} 
+                    style={{ paddingLeft: `${paddingLeft}px` }}
+                    className="transition-colors duration-200"
+                  >
+                    <a
+                      href={`#${heading.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleClickHeading(heading.id);
+                        setShowMobileToc(false); // 点击后关闭移动端目录
+                      }}
+                      className={`block py-2 border-l-2 pl-2 ${
+                        isActive
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                    >
+                      {heading.text}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

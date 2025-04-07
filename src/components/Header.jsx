@@ -14,7 +14,12 @@ const encouragements = [
   "坚持学习，持续成长",
   "挑战自我，超越极限",
   "知识改变命运，学习成就未来",
-  "每天进步一点点，终有一天大不同"
+  "每天进步一点点，终有一天大不同",
+  "勇于尝试，敢于犯错，方能成长",
+  "学习是一场探索之旅，享受过程",
+  "行动是最好的想法",
+  "坚持不懈，直到成功",
+  "今日努力，明日收获"
 ];
 
 const Header = () => {
@@ -32,11 +37,9 @@ const Header = () => {
 
   // 获取随机鼓励语
   useEffect(() => {
-    if (isPostDetail) {
-      const randomIndex = Math.floor(Math.random() * encouragements.length);
-      setEncouragement(encouragements[randomIndex]);
-    }
-  }, [isPostDetail]);
+    const randomIndex = Math.floor(Math.random() * encouragements.length);
+    setEncouragement(encouragements[randomIndex]);
+  }, []);
 
   // 检测设备是否为移动端
   useEffect(() => {
@@ -75,13 +78,17 @@ const Header = () => {
   const quote = "编程不仅仅是代码，更是一种艺术";
   
   const getPageTitle = () => {
-    if (settings.pageTitle) return settings.pageTitle;
+    if (settings?.pageTitle) return settings.pageTitle;
     
-    if (pathname === '/') return quote;
+    if (pathname === '/') return encouragement || quote;
     if (pathname === '/about') return "关于我们";
     if (pathname.startsWith('/posts/')) return "文章详情";
     if (pathname === '/posts') return "所有文章";
-    return "";
+    if (pathname === '/login') return encouragement || "欢迎回来";
+    if (pathname === '/profile') return encouragement || "个人空间";
+    
+    // 对于其他页面也返回激励语
+    return encouragement || quote;
   };
   
   useEffect(() => {
@@ -162,8 +169,9 @@ const Header = () => {
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
-            CyBlog
+          {/* 左侧Logo */}
+          <Link href="/" className="flex items-center text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
+            <span>CyBlog</span>
           </Link>
           
           <div className="flex-1 flex justify-center relative overflow-hidden h-10">
@@ -174,29 +182,8 @@ const Header = () => {
                 : "opacity-100 translate-y-0"
             }`}>
               <NavLink href="/" active={pathname === '/'}>首页</NavLink>
-              <NavLink href="/posts" active={pathname.startsWith('/posts')}>文章</NavLink>
+              <NavLink href="/" active={pathname.startsWith('/posts')}>文章</NavLink>
               <NavLink href="/about" active={pathname === '/about'}>关于</NavLink>
-              {user && user.role === 'admin' && (
-                <div className="relative group">
-                  <button className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200">
-                    管理
-                  </button>
-                  <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <Link
-                      href="/admin"
-                      className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      控制台
-                    </Link>
-                    <Link
-                      href="/admin/settings"
-                      className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
-                    >
-                      设置
-                    </Link>
-                  </div>
-                </div>
-              )}
             </nav>
             
             {/* 移动端鼓励语或目录 */}
@@ -239,10 +226,12 @@ const Header = () => {
                         className="object-cover" 
                       />
                     ) : (
-                      <span className="text-sm font-medium text-gray-700">{user.name?.charAt(0)}</span>
+                      <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center">
+                        <span className="text-white text-sm">{user?.name?.charAt(0)?.toUpperCase()}</span>
+                      </div>
                     )}
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline text-gray-700 dark:text-gray-300">{user.name}</span>
+                  <span className="text-sm font-medium hidden sm:inline-block max-w-[120px] truncate text-gray-700 dark:text-gray-300">{user.name}</span>
                 </button>
                 
                 <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg hidden group-hover:block dark:bg-gray-800">

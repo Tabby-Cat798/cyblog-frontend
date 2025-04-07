@@ -34,8 +34,27 @@ export async function POST(request) {
       );
     }
     
+    // 检查是否为仅GitHub账号（无密码）
+    if (user.github && (!user.password && !user.hashedPassword)) {
+      return NextResponse.json(
+        { error: '此邮箱已通过GitHub账号注册，请使用GitHub登录', githubUser: true },
+        { status: 401 }
+      );
+    }
+    
+    // 确定使用哪个密码字段
+    const passwordField = user.hashedPassword || user.password;
+    
+    // 如果没有密码字段，无法继续
+    if (!passwordField) {
+      return NextResponse.json(
+        { error: '此账号未设置密码，请使用其他方式登录', githubUser: !!user.github },
+        { status: 401 }
+      );
+    }
+    
     // 验证密码
-    const isPasswordValid = bcrypt.compareSync(body.password, user.password);
+    const isPasswordValid = bcrypt.compareSync(body.password, passwordField);
     
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -72,7 +91,7 @@ export async function POST(request) {
     });
     
     // 返回用户信息（不包含密码）
-    const { password, ...userWithoutPassword } = user;
+    const { password, hashedPassword, ...userWithoutPassword } = user;
     
     return NextResponse.json({
       success: true,

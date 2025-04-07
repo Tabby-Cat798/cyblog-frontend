@@ -40,14 +40,15 @@ export async function GET(request) {
         .find({
           _id: { $in: userIds.map(id => new ObjectId(id)) }
         })
-        .project({ name: 1, avatar: 1 })
+        .project({ name: 1, avatar: 1, role: 1 })
         .toArray();
       
       // 创建用户ID到用户信息的映射
       usersData.forEach(user => {
         users[user._id.toString()] = {
           name: user.name,
-          avatar: user.avatar
+          avatar: user.avatar,
+          role: user.role || 'user'
         };
       });
     }
