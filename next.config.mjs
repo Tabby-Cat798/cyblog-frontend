@@ -29,6 +29,11 @@ const nextConfig = {
       maxInactiveAge: 60 * 1000,
       pagesBufferLength: 5,
     },
+    webpack: (config, { isServer }) => {
+      // 添加别名，将coffee-script指向coffeescript
+      config.resolve.alias['coffee-script'] = 'coffeescript';
+      return config;
+    },
   };
   
   export default nextConfig;
