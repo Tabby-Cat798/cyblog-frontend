@@ -46,6 +46,18 @@ export async function POST(request) {
       );
     }
     
+    // 检查用户名是否已存在
+    const existingUsername = await db.collection('users').findOne({
+      name: body.name
+    });
+    
+    if (existingUsername) {
+      return NextResponse.json(
+        { error: '该用户名已被使用' },
+        { status: 409 }
+      );
+    }
+    
     // 哈希密码
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(body.password, salt);
@@ -62,7 +74,8 @@ export async function POST(request) {
       // 使用ui-avatars.com服务生成默认头像，但直接请求不通过Next.js的Image组件
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(body.name)}&background=random&size=256`, 
       isVerified: false, // 邮箱验证状态
-      lastLogin: null
+      lastLogin: null,
+      status: 'active' // 用户状态：active(正常), inactive(禁用)
     };
     
     const result = await db.collection('users').insertOne(user);

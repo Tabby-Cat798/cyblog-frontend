@@ -126,6 +126,14 @@ export async function POST(request) {
         );
       }
       
+      // 检查用户状态，如果是inactive则不允许发表评论
+      if (user.status === 'inactive') {
+        return NextResponse.json(
+          { error: '您的账号已被禁用，无法发表评论' },
+          { status: 403 }
+        );
+      }
+      
       const now = new Date();
       
       // 创建评论对象 - 只存储用户ID引用

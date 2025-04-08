@@ -14,7 +14,7 @@ const Footer = () => {
         <div className="flex justify-center space-x-8 mb-2">
           {/* 小红书图标 */}
           <a 
-            href="https://www.xiaohongshu.com/" 
+            href="https://www.xiaohongshu.com/user/profile/61e60448000000001000596f" 
             target="_blank" 
             rel="noopener noreferrer"
             className="transition-all duration-200"
@@ -26,8 +26,10 @@ const Footer = () => {
               <Image 
                 src="/images/xiaohongshu.svg"
                 alt="小红书" 
-                fill
-                className="object-contain"
+                width={24}
+                height={24}
+                className="object-contain scale-110"
+                style={{ maxWidth: "100%", height: "auto" }}
               />
             </div>
           </a>
@@ -41,18 +43,18 @@ const Footer = () => {
             onMouseLeave={() => setHoveredIcon(null)}
           >
             <div className={`w-6 h-6 relative ${hoveredIcon === 'blog' ? 'opacity-70 scale-110' : ''}`}>
-              <Image 
-                src="/images/logo.png" 
-                alt="CyBlog"
-                fill
-                className="object-contain"
-              />
+            <Image 
+              src="/images/logo.png" 
+              alt="CyBlog"
+              fill
+              className="object-contain"
+            />
             </div>
           </Link>
           
           {/* GitHub图标 */}
           <a 
-            href="https://github.com/" 
+            href="https://github.com/tabby-cat798" 
             target="_blank" 
             rel="noopener noreferrer"
             className="transition-all duration-200"
@@ -64,8 +66,10 @@ const Footer = () => {
               <Image 
                 src="/images/github.svg"
                 alt="GitHub"
-                fill
-                className={`object-contain ${hoveredIcon === 'github' ? 'invert dark:invert-0' : 'dark:invert'}`}
+                width={24}
+                height={24}
+                className="object-contain"
+                style={{ maxWidth: "100%", height: "auto" }}
               />
             </div>
           </a>
@@ -73,7 +77,8 @@ const Footer = () => {
         
         {/* 版权信息 */}
         <div className="text-center text-gray-600 dark:text-gray-400 text-sm">
-          <p>© {currentYear} 由 CyBlog 授权</p>
+          <p>Copyright © {currentYear} cyblog.fun. All Rights Reserved.
+          </p>
         </div>
       </div>
     </footer>

@@ -55,7 +55,8 @@ function GitHubCallbackContent() {
           
           // 登录成功，跳转到首页
           setTimeout(() => {
-            router.push('/');
+            // 强制刷新页面以确保用户信息更新
+            window.location.href = '/';
           }, 3000);
         } else {
           console.error("登录失败:", data.error);

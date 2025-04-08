@@ -217,9 +217,22 @@ export async function POST(request) {
         name: userData.name || userData.login
       });
       
+      // 检查用户名是否已存在
+      const userName = userData.name || userData.login;
+      const existingUsername = await usersCollection.findOne({
+        name: userName
+      });
+      
+      // 如果用户名已存在，添加随机数字后缀
+      let finalUserName = userName;
+      if (existingUsername) {
+        finalUserName = `${userName}${Math.floor(1000 + Math.random() * 9000)}`;
+        console.log('用户名已存在，生成新用户名:', finalUserName);
+      }
+      
       const newUser = {
         email: primaryEmail,
-        name: userData.name || userData.login,
+        name: finalUserName,
         github: {
           id: userData.id.toString(),
           username: userData.login,
@@ -231,7 +244,8 @@ export async function POST(request) {
         updatedAt: now,
         lastLogin: now,
         role: 'user',
-        isVerified: true // GitHub验证的邮箱可以认为是已验证的
+        isVerified: true, // GitHub验证的邮箱可以认为是已验证的
+        status: 'active' // 用户状态：active(正常), inactive(禁用)
       };
       
       const result = await usersCollection.insertOne(newUser);
