@@ -17,6 +17,19 @@ function shouldExcludePath(path) {
   return EXCLUDED_PATHS.some(prefix => path.startsWith(prefix));
 }
 
+// 用于存储最近访问的IP和时间
+const recentVisits = new Map();
+
+// 清理过期记录的函数
+function cleanupOldRecords() {
+  const now = Date.now();
+  for (const [ip, data] of recentVisits.entries()) {
+    if (now - data.timestamp > 1000) { // 1秒后清理记录
+      recentVisits.delete(ip);
+    }
+  }
+}
+
 export async function middleware(request) {
   // 获取请求信息
   const headersList = await headers();
@@ -39,20 +52,16 @@ export async function middleware(request) {
   }
 
   // 检查是否是预渲染请求
-  const userAgent = headersList.get('user-agent') || '';
-  const isPrerender = 
-    userAgent.includes('Next.js') || 
-    userAgent.includes('vercel') ||
-    userAgent.includes('Googlebot') ||
-    userAgent.includes('Bingbot') ||
-    userAgent.includes('Slurp') ||
-    userAgent.includes('DuckDuckBot') ||
-    userAgent.includes('YandexBot') ||
-    userAgent.includes('Sogou') ||
-    userAgent.includes('Baiduspider') ||
-    userAgent.includes('360Spider');
+  const now = Date.now();
+  const recentVisit = recentVisits.get(ip);
 
-  if (isPrerender) {
+  // 如果是根路径访问，记录时间
+  if (path === '/') {
+    recentVisits.set(ip, { timestamp: now });
+    cleanupOldRecords();
+  } 
+  // 如果不是根路径，检查是否在时间窗口内
+  else if (recentVisit && now - recentVisit.timestamp < 500) {
     return NextResponse.next();
   }
 
@@ -80,7 +89,7 @@ export async function middleware(request) {
   const logData = {
     ip,
     path,
-    userAgent,
+    userAgent: headersList.get('user-agent') || '',
     referer: headersList.get('referer') || '',
     userId,
     userName,
