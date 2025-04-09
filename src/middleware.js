@@ -9,7 +9,8 @@ const EXCLUDED_PATHS = [
   '/favicon.ico',
   '/images/',
   '/robots.txt',
-  '/sitemap.xml'
+  '/sitemap.xml',
+  '/login'
 ];
 
 // 检查是否应该跳过记录特定路径
