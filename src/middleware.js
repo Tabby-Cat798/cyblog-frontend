@@ -40,7 +40,19 @@ export async function middleware(request) {
 
   // 检查是否是预渲染请求
   const userAgent = headersList.get('user-agent') || '';
-  if (userAgent.includes('Next.js') || userAgent.includes('vercel')) {
+  const isPrerender = 
+    userAgent.includes('Next.js') || 
+    userAgent.includes('vercel') ||
+    userAgent.includes('Googlebot') ||
+    userAgent.includes('Bingbot') ||
+    userAgent.includes('Slurp') ||
+    userAgent.includes('DuckDuckBot') ||
+    userAgent.includes('YandexBot') ||
+    userAgent.includes('Sogou') ||
+    userAgent.includes('Baiduspider') ||
+    userAgent.includes('360Spider');
+
+  if (isPrerender) {
     return NextResponse.next();
   }
 
@@ -55,10 +67,12 @@ export async function middleware(request) {
         token,
         new TextEncoder().encode(process.env.JWT_SECRET)
       );
-      userId = payload.id;
-      userName = payload.name;
+      if (payload && payload.id && payload.name) {
+        userId = payload.id;
+        userName = payload.name;
+      }
     } catch (error) {
-      // token无效，继续作为未登录用户处理
+      console.error('Token验证失败:', error);
     }
   }
 
