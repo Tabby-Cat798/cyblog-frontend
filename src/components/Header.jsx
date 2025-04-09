@@ -216,7 +216,7 @@ const Header = () => {
             ) : user ? (
               <div className="relative group">
                 <button href="/profile" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
                     {user.avatar ? (
                       <Image 
                         src={user.avatar} 
@@ -316,19 +316,7 @@ const Header = () => {
                 首页
               </Link>
             </li>
-            <li>
-              <Link
-                href="/posts"
-                className={`block py-2 px-4 rounded-lg ${
-                  pathname.startsWith("/posts")
-                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                文章
-              </Link>
-            </li>
+
             <li>
               <Link
                 href="/about"
@@ -380,31 +368,7 @@ const Header = () => {
               </li>
             )}
             
-            {user && user.role === 'admin' && (
-              <>
-                <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <p className="px-4 text-sm text-gray-500 dark:text-gray-400">管理</p>
-                </li>
-                <li>
-                  <Link
-                    href="/admin"
-                    className="block py-2 px-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    控制台
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/admin/settings"
-                    className="block py-2 px-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    设置
-                  </Link>
-                </li>
-              </>
-            )}
+            
           </ul>
         </nav>
       </div>
