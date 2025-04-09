@@ -66,7 +66,7 @@ export async function middleware(request) {
   }
 
   // 获取用户信息
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get('auth-token')?.value;
   let userId = null;
   let userName = null;
 
