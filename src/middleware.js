@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import { headers } from 'next/headers';
 
 // 哪些路径不需要记录访问
 const EXCLUDED_PATHS = [
@@ -17,66 +18,72 @@ function shouldExcludePath(path) {
 }
 
 export async function middleware(request) {
-  const path = request.nextUrl.pathname;
+  // 获取请求信息
+  const headersList = await headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
   
-  // 跳过不需要记录的路径
-  if (shouldExcludePath(path)) {
+  // 排除本地IP
+  if (ip === '127.0.0.1' || ip === '::1') {
     return NextResponse.next();
   }
-  
-  // 获取IP地址（考虑代理服务器的情况）
-  let ip = request.headers.get('x-forwarded-for') || request.ip || '未知IP';
-  if (ip.includes(',')) {
-    ip = ip.split(',')[0].trim();
+
+  // 排除不需要记录的路径
+  const path = request.nextUrl.pathname;
+  if (
+    path.startsWith('/api') ||
+    path.startsWith('/_next') ||
+    path.startsWith('/static') ||
+    path.includes('.')
+  ) {
+    return NextResponse.next();
   }
-  
-  // 获取用户代理
-  const userAgent = request.headers.get('user-agent') || '未知浏览器';
-  
-  // 获取来源页面
-  const referer = request.headers.get('referer') || '';
-  
-  // 尝试从cookie中获取用户信息
+
+  // 检查是否是预渲染请求
+  const userAgent = headersList.get('user-agent') || '';
+  if (userAgent.includes('Next.js') || userAgent.includes('vercel')) {
+    return NextResponse.next();
+  }
+
+  // 获取用户信息
+  const token = request.cookies.get('token')?.value;
   let userId = null;
   let userName = null;
-  
-  try {
-    const token = request.cookies.get('auth-token')?.value;
-    if (token) {
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+  if (token) {
+    try {
       const { payload } = await jwtVerify(
         token,
-        new TextEncoder().encode(JWT_SECRET)
+        new TextEncoder().encode(process.env.JWT_SECRET)
       );
-      
       userId = payload.id;
       userName = payload.name;
+    } catch (error) {
+      // token无效，继续作为未登录用户处理
     }
-  } catch (error) {
-    // 如果token无效，继续但不记录用户信息
-    console.error('访客记录中间件 - JWT验证失败:', error.message);
   }
-  
-  // 异步记录访问，但不等待其完成，避免影响性能
-  fetch(`${request.nextUrl.origin}/api/analytics/visitor`, {
+
+  // 异步记录访问信息
+  const logData = {
+    ip,
+    path,
+    userAgent,
+    referer: headersList.get('referer') || '',
+    userId,
+    userName,
+    timestamp: new Date()
+  };
+
+  // 使用fetch发送数据到API
+  fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/analytics/visitor`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      ip,
-      path,
-      userAgent,
-      referer,
-      userId,
-      userName,
-      timestamp: new Date().toISOString()
-    }),
+    body: JSON.stringify(logData),
   }).catch(error => {
-    console.error('访客记录中间件 - 记录访问失败:', error);
+    console.error('记录访问信息失败:', error);
   });
-  
-  // 继续请求
+
   return NextResponse.next();
 }
 
@@ -84,10 +91,12 @@ export async function middleware(request) {
 export const config = {
   matcher: [
     /*
-     * 匹配所有请求路径，除了以下路径:
-     * - api 路由 (/api/*)
-     * - 静态文件 (/_next/static/*, /_next/image/*)
+     * 匹配所有路径，除了:
+     * - api (API路由)
+     * - _next/static (静态文件)
+     * - _next/image (图片优化)
+     * - favicon.ico (网站图标)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }; 
