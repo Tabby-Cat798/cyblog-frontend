@@ -26,6 +26,8 @@ const BlogCard = ({ post }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   // 添加内容渐入效果状态
   const [contentVisible, setContentVisible] = useState(false);
+  // 添加悬停状态
+  const [isHovered, setIsHovered] = useState(false);
 
   // 使用useEffect实现内容的延迟渐入
   useEffect(() => {
@@ -58,10 +60,16 @@ const BlogCard = ({ post }) => {
   const formattedDate = formatDate(createdAt);
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-500 flex flex-col h-full transform ${
-      contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-    }`}>
-      <div className="relative h-48 w-full">
+    <div 
+      className={`bg-white dark:bg-gray-800 rounded-lg overflow-hidden flex flex-col h-full transform transition-all duration-500 ${
+        contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      } ${
+        isHovered ? 'shadow-xl border border-blue-400 dark:border-blue-500' : 'shadow-md hover:shadow-lg border border-transparent'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Link href={`/posts/${_id}`} className="relative h-48 w-full overflow-hidden">
         {/* 图片加载骨架 */}
         <div className={`absolute inset-0 bg-gray-200 dark:bg-gray-700 ${
           imageLoaded ? 'opacity-0' : 'opacity-100 animate-pulse'
@@ -72,8 +80,10 @@ const BlogCard = ({ post }) => {
             src={coverImage}
             alt={title}
             fill
-            className={`object-cover transition-opacity duration-500 ${
+            className={`object-cover transition-all duration-500 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
+            } ${
+              isHovered ? 'scale-110' : 'scale-100'
             }`}
             onLoadingComplete={() => setImageLoaded(true)}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -83,7 +93,7 @@ const BlogCard = ({ post }) => {
             <span className="text-gray-500 dark:text-gray-400">无封面图片</span>
           </div>
         )}
-      </div>
+      </Link>
       
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex flex-wrap gap-2 mb-2">
@@ -98,7 +108,11 @@ const BlogCard = ({ post }) => {
         </div>
         
         <Link href={`/posts/${_id}`}>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 mb-2 line-clamp-2">
+          <h2 className={`text-xl font-bold mb-2 line-clamp-2 transition-colors duration-300 ${
+            isHovered 
+              ? 'text-blue-600 dark:text-blue-400' 
+              : 'text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400'
+          }`}>
             {title}
           </h2>
         </Link>

@@ -1,5 +1,6 @@
 import clientPromise from '../lib/mongodb';
 import HomeServer from "@/components/HomeServer";
+import AnimatedWelcome from "@/components/AnimatedWelcome";
 
 // 设置ISR重新验证时间为1分钟
 export const revalidate = 60;
@@ -61,10 +62,11 @@ export default async function Home() {
   return (
     <main className="container mx-auto px-4 py-8">
       <section className="mb-16 text-center pt-8">
-        <h1 className="text-4xl font-bold mb-4">欢迎来到技术博客</h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-          这里分享关于Web开发、人工智能、数据科学等领域的技术文章与学习心得
-        </p>
+        <h1 className="text-4xl font-bold mb-4">欢迎来到Cyril的博客</h1>
+        <div className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+          {/* 使用客户端组件实现打字效果 */}
+          <AnimatedWelcome />
+        </div>
       </section>
       
       <section className="mb-16">
