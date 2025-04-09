@@ -20,7 +20,6 @@ export async function POST(request) {
       userAgent: data.userAgent || '未知浏览器',
       referer: data.referer || '',
       userId: data.userId || null,
-      userName: data.userName || null,
       timestamp: data.timestamp ? new Date(data.timestamp) : new Date()
     };
     
