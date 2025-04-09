@@ -61,7 +61,7 @@ export async function middleware(request) {
     cleanupOldRecords();
   } 
   // 如果不是根路径，检查是否在时间窗口内
-  else if (recentVisit && now - recentVisit.timestamp < 500) {
+  else if (recentVisit && now - recentVisit.timestamp < 1000) {
     return NextResponse.next();
   }
 
