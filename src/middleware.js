@@ -49,12 +49,7 @@ export async function middleware(request) {
 
   // 排除不需要记录的路径
   const path = request.nextUrl.pathname;
-  if (
-    path.startsWith('/api') ||
-    path.startsWith('/_next') ||
-    path.startsWith('/static') ||
-    path.includes('.')
-  ) {
+  if (shouldExcludePath(path)) {
     return NextResponse.next();
   }
 
