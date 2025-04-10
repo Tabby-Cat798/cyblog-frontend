@@ -20,6 +20,12 @@ const nextConfig = {
           port: '',
           pathname: '/**',
         },
+        {
+          protocol: 'http',
+          hostname: 'images.cyblog.fun',
+          port: '',
+          pathname: '/**',
+        },
       ],
       formats: ['image/webp'],
     },
