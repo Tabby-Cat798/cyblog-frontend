@@ -36,13 +36,9 @@ export const uploadToOSS = async (fileBuffer, fileName, folder = 'avatars') => {
     // 上传文件
     const result = await client.put(uniqueFileName, fileBuffer);
     
-    // 返回文件URL
-    if (result && result.url) {
-      return result.url;
-    } 
-    
-    // 如果结果中没有URL，则自行构建URL
-    return `https://${process.env.ALIYUN_OSS_BUCKET}.oss-${process.env.ALIYUN_OSS_REGION}.aliyuncs.com/${uniqueFileName}`;
+    // 使用CDN加速域名构建URL
+    const cdnDomain = process.env.CDN_DOMAIN || 'images.cyblog.fun';
+    return `https://${cdnDomain}/${uniqueFileName}`;
   } catch (error) {
     console.error('OSS上传失败:', error);
     throw new Error(`文件上传失败: ${error.message}`);

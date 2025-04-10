@@ -32,7 +32,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "coffee-script": "^1.12.7",
     "coffeescript": "^2.7.0",
     "tailwindcss": "^4"
   }
