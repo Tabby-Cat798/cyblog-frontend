@@ -2,20 +2,23 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { jwtVerify } from 'jose';
 
-// 哪些路径不需要记录访问
-const EXCLUDED_PATHS = [
-  '/api/',
-  '/_next/',
-  '/favicon.ico',
-  '/images/',
-  '/robots.txt',
-  '/sitemap.xml',
-  '/login'
+// 只记录这些路径的访问
+const INCLUDED_PATHS = [
+  '/',           // 首页
+  '/posts',      // 文章列表页
+  '/about',     // 关于页面
+  '/profile',   // 用户中心
 ];
 
-// 检查是否应该跳过记录特定路径
-function shouldExcludePath(path) {
-  return EXCLUDED_PATHS.some(prefix => path.startsWith(prefix));
+// 检查是否应该记录特定路径
+function shouldRecordPath(path) {
+  // 对于文章详情页，路径格式为 /posts/[id]，其中id是MongoDB的ObjectId
+  if (path.match(/^\/posts\/[a-zA-Z0-9]+$/)) {
+    return true;
+  }
+  
+  // 其他指定路径
+  return INCLUDED_PATHS.includes(path);
 }
 
 // 创建节流函数
@@ -48,9 +51,11 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // 排除不需要记录的路径
+  // 获取路径
   const path = request.nextUrl.pathname;
-  if (shouldExcludePath(path)) {
+  
+  // 只记录指定路径
+  if (!shouldRecordPath(path)) {
     return NextResponse.next();
   }
 
