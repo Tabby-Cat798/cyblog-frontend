@@ -66,8 +66,7 @@ export default async function Home() {
       <section className="mb-16 text-center pt-8">
         <h1 className="text-4xl font-bold mb-4">欢迎光临</h1>
         <h1 className="text-4xl font-bold mb-4">Cyril の 博客</h1>
-        <div className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto mb-32">
-          {/* 使用客户端组件实现打字效果 */}
+        <div className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto min-h-[2rem]">
           <AnimatedWelcome />
         </div>
       </section>
