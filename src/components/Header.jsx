@@ -193,7 +193,7 @@ const Header = () => {
             }`}>
               <NavLink href="/" active={isClient && pathname === '/'}>首页</NavLink>
               <NavLink href="/#articles" active={isClient && pathname.startsWith('/posts')}>文章</NavLink>
-              <NavLink href="/about" active={isClient && pathname === '/about'}>关于</NavLink>
+              <NavLink href="/about" active={isClient && pathname === '/about'}>我的</NavLink>
             </nav>
             
             {/* 移动端鼓励语或目录 */}
@@ -354,7 +354,7 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 suppressHydrationWarning
               >
-                关于
+                我的
               </Link>
             </li>
             
