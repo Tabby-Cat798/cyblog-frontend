@@ -357,27 +357,7 @@ const Header = () => {
                 我的
               </Link>
             </li>
-            
-            {/* 如果是文章详情页，显示目录 */}
-            {isPostDetail && tableOfContents.length > 0 && (
-              <li className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                <p className="px-4 text-sm text-gray-500 dark:text-gray-400">文章目录</p>
-                <ul className="mt-2 space-y-1">
-                  {tableOfContents.map((heading) => (
-                    <li key={heading.id}>
-                      <button
-                        onClick={() => handleTocItemClick(heading.id)}
-                        className={`block w-full text-left py-1 px-4 text-sm rounded ${
-                          heading.level === 3 ? "pl-8" : "pl-4"
-                        } text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700`}
-                      >
-                        {heading.text}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            )}
+
             
             {user && (
               <li>

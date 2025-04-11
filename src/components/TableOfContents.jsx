@@ -286,7 +286,7 @@ const TableOfContents = ({ content }) => {
       {/* 移动端目录弹出层 */}
       {showMobileToc && (
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-end">
-          <div className="bg-white dark:bg-gray-900 w-3/4 h-full overflow-y-auto p-4">
+          <div className="bg-white dark:bg-gray-900 w-3/4 h-full overflow-y-auto p-4 mt-16">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">目录</h4>
               <button 
