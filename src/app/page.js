@@ -62,14 +62,15 @@ export default async function Home() {
   return (
     <main className="container mx-auto px-4 py-8">
       <section className="mb-16 text-center pt-8">
-        <h1 className="text-4xl font-bold mb-4">欢迎来到Cyril的博客</h1>
+        <h1 className="text-4xl font-bold mb-4">欢迎光临</h1>
+        <h1 className="text-4xl font-bold mb-4">Cyril の 博客</h1>
         <div className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
           {/* 使用客户端组件实现打字效果 */}
           <AnimatedWelcome />
         </div>
       </section>
       
-      <section className="mb-16">
+      <section className="mb-16" id="articles">
         <div className="flex justify-between items-center mb-8 pb-2 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold">最新文章</h2>
         </div>

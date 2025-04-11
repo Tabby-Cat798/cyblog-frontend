@@ -10,16 +10,20 @@ import { useSettings } from '@/lib/SettingsContext';
 
 // 鼓励语数组
 const encouragements = [
-  "今天的知识是明天的财富",
-  "坚持学习，持续成长",
-  "挑战自我，超越极限",
-  "知识改变命运，学习成就未来",
-  "每天进步一点点，终有一天大不同",
-  "勇于尝试，敢于犯错，方能成长",
-  "学习是一场探索之旅，享受过程",
-  "行动是最好的想法",
-  "坚持不懈，直到成功",
-  "今日努力，明日收获"
+  "「async/await 教会我：有些事不必阻塞人生，但要学会优雅等待」",
+  "「在Chrome DevTools里调试的不是代码，是自己混乱的思考路径」",
+  "「真正的响应式设计，是凌晨三点改需求时依然稳定的血压」",
+  "「用!important就像在代码里摔门——有效但缺乏格调」",
+  "「看见NaN !== NaN的那一刻，我接受了人类的孤独本质」",
+  "「TypeScript说：安全感不是天生的，是类型标注给的」",
+  "「git rebase的本质：把草稿纸上的涂鸦重写成史诗」",
+  "「我的代码像React组件——状态越复杂，生命周期越迷茫」",
+  "「Vue的响应式像初恋——你以为双向绑定，其实是单向沦陷」",
+  "「每个console.log都是对宇宙的一次哲学提问」",
+  "「border-radius让像素世界变柔软」",
+  "「用Flexbox布局的不仅是DIV，还有成年人的情绪管理」",
+  "「写递归函数前先问自己：是否真的理解人生基线条件？」"
+
 ];
 
 const Header = () => {
@@ -30,10 +34,16 @@ const Header = () => {
   const [tableOfContents, setTableOfContents] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [encouragement, setEncouragement] = useState("");
+  const [isClient, setIsClient] = useState(false);
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
   const { settings } = useSettings();
-  const isPostDetail = pathname.startsWith('/posts/');
+  const isPostDetail = pathname.startsWith('/posts');
+
+  // 设置客户端状态
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 获取随机鼓励语
   useEffect(() => {
@@ -181,9 +191,9 @@ const Header = () => {
                 ? "opacity-0 -translate-y-full pointer-events-none" 
                 : "opacity-100 translate-y-0"
             }`}>
-              <NavLink href="/" active={pathname === '/'}>首页</NavLink>
-              <NavLink href="/" active={pathname.startsWith('/posts')}>文章</NavLink>
-              <NavLink href="/about" active={pathname === '/about'}>关于</NavLink>
+              <NavLink href="/" active={isClient && pathname === '/'}>首页</NavLink>
+              <NavLink href="/#articles" active={isClient && pathname.startsWith('/posts')}>文章</NavLink>
+              <NavLink href="/about" active={isClient && pathname === '/about'}>关于</NavLink>
             </nav>
             
             {/* 移动端鼓励语或目录 */}
@@ -307,11 +317,12 @@ const Header = () => {
               <Link
                 href="/"
                 className={`block py-2 px-4 rounded-lg ${
-                  pathname === "/"
+                  isClient && pathname === "/"
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 onClick={() => setIsMenuOpen(false)}
+                suppressHydrationWarning
               >
                 首页
               </Link>
@@ -319,13 +330,29 @@ const Header = () => {
 
             <li>
               <Link
-                href="/about"
+                href="/#articles"
                 className={`block py-2 px-4 rounded-lg ${
-                  pathname === "/about"
+                  isClient && pathname.startsWith("/posts")
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 onClick={() => setIsMenuOpen(false)}
+                suppressHydrationWarning
+              >
+                文章
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/about"
+                className={`block py-2 px-4 rounded-lg ${
+                  isClient && pathname === "/about"
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+                suppressHydrationWarning
               >
                 关于
               </Link>
@@ -386,6 +413,7 @@ const NavLink = ({ href, active, children }) => {
           ? 'text-blue-600 dark:text-blue-400 font-medium' 
           : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
       } transition-colors duration-200`}
+      suppressHydrationWarning
     >
       {children}
     </Link>
