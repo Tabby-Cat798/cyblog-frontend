@@ -1,6 +1,8 @@
 import clientPromise from '../lib/mongodb';
 import HomeServer from "@/components/HomeServer";
 import AnimatedWelcome from "@/components/AnimatedWelcome";
+import Link from "next/link";
+import Image from "next/image";
 
 // 设置ISR重新验证时间为1分钟
 export const revalidate = 60;
