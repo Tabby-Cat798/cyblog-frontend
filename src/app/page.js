@@ -4,8 +4,8 @@ import AnimatedWelcome from "@/components/AnimatedWelcome";
 import Link from "next/link";
 import Image from "next/image";
 
-// 设置ISR重新验证时间为1分钟
-export const revalidate = 60;
+// 设置ISR重新验证时间为1小时
+export const revalidate = 3600;
 
 // 从数据库直接获取数据而非通过API
 async function getInitialPosts() {

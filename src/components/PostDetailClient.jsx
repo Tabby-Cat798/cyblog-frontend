@@ -7,11 +7,11 @@ import TableOfContents from './TableOfContents';
 import CommentSection from './CommentSection';
 import { useSettings } from '@/lib/SettingsContext';
 
-const PostDetailClient = ({ postId }) => {
-  const [post, setPost] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+const PostDetailClient = ({ postId, initialData }) => {
+  const [post, setPost] = useState(initialData || null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState(null);
-  const [viewCount, setViewCount] = useState(0);
+  const [viewCount, setViewCount] = useState(initialData?.viewCount || 0);
 
   // 获取全局设置
   const { settings, setPageTitle } = useSettings();
@@ -59,6 +59,14 @@ const PostDetailClient = ({ postId }) => {
 
   useEffect(() => {
     const fetchPost = async () => {
+      // 如果已经有初始数据，不需要重新获取
+      if (initialData) {
+        setPost(initialData);
+        // 确保设置正确的初始阅览量
+        setViewCount(initialData.viewCount || 0);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const response = await fetch(`/api/posts/${postId}`);
@@ -67,16 +75,16 @@ const PostDetailClient = ({ postId }) => {
         }
         const data = await response.json();
         setPost(data);
+        // 设置正确的阅览量
         setViewCount(data.viewCount || 0);
         
         // 设置页面标题
         if (data.title) {
-          setPageTitle(data.title);
+          document.title = `${data.title} | CyBlog`;
         }
         
         // 在客户端环境下才执行增加阅览量的操作
         if (typeof window !== 'undefined') {
-          // 文章加载成功后，增加阅览量
           await incrementViewCount(postId);
         }
       } catch (err) {
@@ -86,15 +94,15 @@ const PostDetailClient = ({ postId }) => {
       }
     };
 
-    if (postId) {
+    if (postId && !initialData) {
       fetchPost();
     }
     
-    // 组件卸载时清除页面标题
+    // 组件卸载时重置标题
     return () => {
-      setPageTitle("");
+      document.title = "CyBlog";
     };
-  }, [postId, showViewCount]);
+  }, [postId, initialData]);
 
   if (isLoading) {
     return (

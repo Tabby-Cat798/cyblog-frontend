@@ -1,40 +1,28 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
 
 // 此路由用于手动触发页面重新验证
 export async function POST(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const secret = searchParams.get('secret');
-
-    // 检查安全密钥是否正确（应该与环境变量中设置的匹配）
-    if (secret !== process.env.REVALIDATE_SECRET) {
-      return NextResponse.json(
-        { error: '无效的重新验证请求' },
-        { status: 401 }
-      );
+    // 验证请求来源
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.REVALIDATE_TOKEN}`) {
+      return new Response('Unauthorized', { status: 401 });
     }
 
-    // 获取要重新验证的路径
-    const path = searchParams.get('path') || '/';
-    
-    // 触发重新验证
-    revalidatePath(path);
+    const { path, postId } = await request.json();
 
-    return NextResponse.json({
-      revalidated: true,
-      timestamp: Date.now(),
-      path
-    });
+    // 重新验证首页
+    await NextResponse.revalidate('/');
+    
+    // 如果提供了文章ID，重新验证该文章
+    if (postId) {
+      await NextResponse.revalidate(`/posts/${postId}`);
+    }
+
+    return new Response('Revalidation successful', { status: 200 });
   } catch (error) {
     console.error('重新验证失败:', error);
-    return NextResponse.json(
-      { 
-        revalidated: false, 
-        error: error.message 
-      },
-      { status: 500 }
-    );
+    return new Response('Revalidation failed', { status: 500 });
   }
 }
 

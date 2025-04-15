@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "CyBlog | 技术博客",
-  description: "个人技术博客，分享Web开发、算法、数据结构等领域的技术文章与学习心得",
+  title: "CyBlog ｜ 技术博客",
+  description: "CyBlog个人技术博客，分享Web开发、算法、数据结构等领域的技术文章与学习心得",
 };
 
 export default function RootLayout({ children }) {

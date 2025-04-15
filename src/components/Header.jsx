@@ -39,6 +39,7 @@ const Header = () => {
   const { user, loading, logout } = useAuth();
   const { settings } = useSettings();
   const isPostDetail = pathname.startsWith('/posts');
+  const [currentPostTitle, setCurrentPostTitle] = useState("");
 
   // 设置客户端状态
   useEffect(() => {
@@ -85,6 +86,16 @@ const Header = () => {
     }
   }, [isPostDetail]);
 
+  // 获取文章标题
+  useEffect(() => {
+    if (isPostDetail) {
+      const postTitle = document.querySelector('article h1')?.textContent;
+      if (postTitle) {
+        setCurrentPostTitle(postTitle);
+      }
+    }
+  }, [isPostDetail, pathname]);
+
   const quote = "编程不仅仅是代码，更是一种艺术";
   
   const getPageTitle = () => {
@@ -92,7 +103,7 @@ const Header = () => {
     
     if (pathname === '/') return encouragement || quote;
     if (pathname === '/about') return "关于我们";
-    if (pathname.startsWith('/posts/')) return "文章详情";
+    if (pathname.startsWith('/posts/')) return currentPostTitle || "文章详情";
     if (pathname === '/posts') return "所有文章";
     if (pathname === '/login') return encouragement || "欢迎回来";
     if (pathname === '/profile') return encouragement || "个人空间";
