@@ -258,23 +258,28 @@ export async function POST(request) {
     
     // 创建JWT令牌
     console.log('创建JWT令牌...');
+    
+    // 设置半年过期时间 (182天)
+    const maxAge = 15768000; // 182天的秒数
+    const expires = new Date();
+    expires.setTime(expires.getTime() + maxAge * 1000);
+    
     const token = await new SignJWT({ 
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name,
+      userId: user._id.toString(),
       role: user.role || 'user'
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('24h')
+      .setExpirationTime(expires.getTime() / 1000) // JWT令牌半年后过期
       .sign(new TextEncoder().encode(JWT_SECRET));
     
-    // 设置Cookie
-    await cookieStore.set('auth-token', token, { 
+    // 设置认证Cookie，与JWT令牌同时过期
+    await cookieStore.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 15768000, // 24小时
-      path: '/'
+      maxAge, // Cookie半年后过期 (182天)
+      path: '/',
+      sameSite: 'lax'
     });
     console.log('认证Cookie已设置');
     

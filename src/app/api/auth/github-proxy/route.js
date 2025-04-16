@@ -129,7 +129,7 @@ export async function POST(request) {
       method: 'GET',
       headers: {
         'Authorization': `token ${accessToken}`,
-        'Accept': 'application/json'
+        'Accept': 'application/vnd.github.v3+json'
       }
     });
     
@@ -155,7 +155,7 @@ export async function POST(request) {
       method: 'GET',
       headers: {
         'Authorization': `token ${accessToken}`,
-        'Accept': 'application/json'
+        'Accept': 'application/vnd.github.v3+json'
       }
     });
     
@@ -227,13 +227,26 @@ export async function POST(request) {
       );
     } else {
       // 创建新用户
-      console.log('创建新用户账户');
+      console.log('创建新用户', {
+        email: primaryEmail,
+        name: userData.name || userData.login
+      });
       
-      // 提取显示名称（优先使用GitHub姓名，其次是用户名）
-      const displayName = userData.name || userData.login;
+      // 检查用户名是否已存在
+      const userName = userData.name || userData.login;
+      const existingUsername = await usersCollection.findOne({
+        name: userName
+      });
+      
+      // 如果用户名已存在，添加随机数字后缀
+      let finalUserName = userName;
+      if (existingUsername) {
+        finalUserName = `${userName}${Math.floor(1000 + Math.random() * 9000)}`;
+        console.log('用户名已存在，生成新用户名:', finalUserName);
+      }
       
       user = {
-        name: displayName,
+        name: finalUserName,
         email: primaryEmail,
         role: 'user',
         github: {
@@ -245,7 +258,9 @@ export async function POST(request) {
         avatar: userData.avatar_url,
         createdAt: now,
         updatedAt: now,
-        lastLogin: now
+        lastLogin: now,
+        isVerified: true, // GitHub验证的邮箱可以认为是已验证的
+        status: 'active' // 用户状态：active(正常), inactive(禁用)
       };
       
       const result = await usersCollection.insertOne(user);
@@ -255,8 +270,10 @@ export async function POST(request) {
     // 生成JWT令牌
     console.log('为用户生成认证令牌');
     
+    // 设置半年过期时间 (182天)
+    const maxAge = 15768000; // 182天的秒数
     const expires = new Date();
-    expires.setDate(expires.getDate() + 7); // 7天过期
+    expires.setTime(expires.getTime() + maxAge * 1000);
     
     const token = await new SignJWT({ 
       userId: user._id.toString(),
@@ -264,14 +281,14 @@ export async function POST(request) {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime(expires.getTime() / 1000)
+      .setExpirationTime(expires.getTime() / 1000) // JWT令牌半年后过期
       .sign(new TextEncoder().encode(JWT_SECRET));
     
-    // 设置认证Cookie
-    cookieStore.set('auth_token', token, {
+    // 设置认证Cookie，与JWT令牌同时过期
+    cookieStore.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      expires,
+      maxAge, // Cookie半年后过期 (182天)
       path: '/',
       sameSite: 'lax'
     });
