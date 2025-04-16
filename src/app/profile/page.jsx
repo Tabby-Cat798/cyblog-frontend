@@ -46,6 +46,32 @@ export default function ProfilePage() {
     }
   }, [loading, user, router]);
   
+  // 渲染骨架屏UI
+  const renderSkeleton = () => {
+    return (
+      <div className="animate-pulse">
+        <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+        
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+          <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded-t mr-4"></div>
+          <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded-t mr-4"></div>
+          <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded-t"></div>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+          <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 mb-6">
+            <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+            <div className="flex-1">
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          </div>
+          <div className="h-10 w-40 bg-gray-200 dark:bg-gray-700 rounded mt-6 ml-auto"></div>
+        </div>
+      </div>
+    );
+  };
+  
   // 处理表单输入变化
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -171,8 +197,8 @@ export default function ProfilePage() {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <FontAwesomeIcon icon={faSpinner} spin className="text-3xl text-blue-600" />
+      <div className="max-w-3xl mx-auto my-12">
+        {renderSkeleton()}
       </div>
     );
   }

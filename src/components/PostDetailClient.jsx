@@ -19,15 +19,64 @@ const PostDetailClient = ({ postId, initialData }) => {
   // 确定是否显示阅读量和评论
   const showViewCount = settings?.articles?.defaultShowViewCount ?? true;
   const allowComments = settings?.articles?.defaultAllowComments ?? true;
+  
+  // 添加诊断日志检查settings的值
+  console.log('[阅览量系统] 全局设置状态:', {
+    settings: settings,
+    showViewCount: showViewCount,
+    allowComments: allowComments
+  });
 
   // 更新阅览量的函数
   const incrementViewCount = async (id) => {
     try {
-      // 只有在允许显示阅读量时才更新阅读量
-      if (!showViewCount) return;
+      // 检查localStorage是否可用
+      let storageAvailable = false;
+      try {
+        const testKey = "__test__";
+        localStorage.setItem(testKey, testKey);
+        storageAvailable = localStorage.getItem(testKey) === testKey;
+        localStorage.removeItem(testKey);
+        console.log('[阅览量] localStorage可用:', storageAvailable);
+      } catch (e) {
+        console.warn('[阅览量] localStorage不可用:', e);
+        storageAvailable = false;
+      }
       
-      // 检查localStorage中是否已经记录了该文章的阅读
-      const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+      // 即使localStorage不可用，我们也尝试增加阅览量（跳过去重检查）
+      if (!storageAvailable) {
+        console.log('[阅览量] 由于localStorage不可用，将直接增加阅览量');
+        // 直接发送请求增加阅览量
+        const response = await fetch(`/api/posts/${id}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+          setViewCount(prev => prev + 1);
+          console.log('[阅览量] API请求成功，阅览量已增加（localStorage不可用模式）');
+        } else {
+          console.warn('[阅览量] API请求失败:', await response.text());
+        }
+        return;
+      }
+      
+      // localStorage可用，执行正常流程
+      let viewedPosts;
+      try {
+        viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+      } catch (e) {
+        console.warn('[阅览量] 解析localStorage数据失败，将重置:', e);
+        viewedPosts = {};
+      }
+      
+      // 输出当前localStorage状态
+      console.log('[阅览量] 检查状态:', { 
+        文章ID: id,
+        上次访问时间: viewedPosts[id] ? new Date(viewedPosts[id]).toLocaleString() : '从未访问',
+        所有记录文章数: Object.keys(viewedPosts).length,
+        显示设置: showViewCount
+      });
       
       // 检查上次访问时间，如果超过24小时才算新的访问
       const currentTime = new Date().getTime();
@@ -35,25 +84,90 @@ const PostDetailClient = ({ postId, initialData }) => {
       const twentyFourHours = 24 * 60 * 60 * 1000; // 24小时的毫秒数
       
       if (currentTime - lastViewTime > twentyFourHours) {
-        // 更新本地存储中的访问时间记录
-        viewedPosts[id] = currentTime;
-        localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+        // 输出即将更新的信息
+        console.log('[阅览量] 需要更新:', { 
+          文章ID: id, 
+          时间差: `${Math.floor((currentTime - lastViewTime) / (60 * 60 * 1000))}小时`,
+          将更新为: new Date(currentTime).toLocaleString()
+        });
         
-        // 发送请求增加阅览量
+        // 使用try-catch来处理localStorage写入操作
+        try {
+          // 更新本地存储中的访问时间记录
+          viewedPosts[id] = currentTime;
+          localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+          
+          // 验证localStorage是否成功更新
+          const verifyStorage = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+          console.log('[阅览量] 存储结果:', {
+            成功: verifyStorage[id] === currentTime,
+            当前时间戳: verifyStorage[id],
+            期望时间戳: currentTime,
+            相应日期: new Date(verifyStorage[id]).toLocaleString()
+          });
+        } catch (e) {
+          console.warn('[阅览量] 更新localStorage失败，将继续增加阅览量:', e);
+        }
+        
+        // 无论localStorage是否成功更新，都发送请求增加阅览量
+        let apiSuccess = false;
+        try {
+          // 发送请求增加阅览量
+          const response = await fetch(`/api/posts/${id}/view`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            // 更新本地显示的阅览量，即使不显示也要更新状态
+            setViewCount(prev => prev + 1);
+            console.log('[阅览量] API请求成功，阅览量已增加');
+            apiSuccess = true;
+          } else {
+            console.warn('[阅览量] API请求失败:', await response.text());
+          }
+        } catch (e) {
+          console.error('[阅览量] API请求发生错误:', e);
+        }
+        
+        // 如果API请求失败但localStorage更新成功，则回滚localStorage（为下次尝试保留机会）
+        if (!apiSuccess) {
+          try {
+            delete viewedPosts[id]; // 删除本次记录
+            localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+            console.log('[阅览量] 由于API请求失败，已回滚localStorage记录');
+          } catch (e) {
+            console.warn('[阅览量] 回滚localStorage失败:', e);
+          }
+        }
+      } else {
+        const hoursLeft = Math.floor((twentyFourHours - (currentTime - lastViewTime)) / (60 * 60 * 1000));
+        console.log('[阅览量] 无需更新:', { 
+          文章ID: id, 
+          距离上次访问: `${Math.floor((currentTime - lastViewTime) / (60 * 60 * 1000))}小时`,
+          需再等待: `${hoursLeft}小时后才会再次计数`
+        });
+      }
+    } catch (error) {
+      console.error('[阅览量] 处理失败:', error);
+      
+      // 即使主要流程失败，仍然尝试直接增加阅览量
+      try {
+        console.log('[阅览量] 主流程失败，尝试应急增加阅览量');
         const response = await fetch(`/api/posts/${id}/view`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         
         if (response.ok) {
-          // 更新本地显示的阅览量
           setViewCount(prev => prev + 1);
+          console.log('[阅览量] 应急API请求成功');
         }
+      } catch (e) {
+        console.error('[阅览量] 应急增加阅览量也失败:', e);
       }
-    } catch (error) {
-      console.error('增加阅览量失败:', error);
     }
   };
 
@@ -64,6 +178,16 @@ const PostDetailClient = ({ postId, initialData }) => {
         setPost(initialData);
         // 确保设置正确的初始阅览量
         setViewCount(initialData.viewCount || 0);
+        
+        // 在客户端环境下更新阅览量，即使有初始数据
+        if (typeof window !== 'undefined') {
+          try {
+            console.log('[阅览量] 使用初始数据时尝试更新阅览量');
+            await incrementViewCount(postId);
+          } catch (err) {
+            console.error('[阅览量] 初始数据模式更新失败:', err);
+          }
+        }
         return;
       }
 

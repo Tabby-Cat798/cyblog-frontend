@@ -36,8 +36,7 @@ export async function GET() {
           { status: 401 }
         );
       }
-      
-      console.log('从JWT解析出用户ID:', userId);
+
       
       // 从数据库获取最新的用户信息
       const client = await clientPromise;
