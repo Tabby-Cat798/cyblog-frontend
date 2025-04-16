@@ -232,29 +232,27 @@ const Header = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            {loading ? (
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-            ) : user ? (
+            {/* 登录状态显示 */}
+            {!loading && user ? (
               <div className="relative group">
-                <button href="/profile" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
-                    {user.avatar ? (
-                      <Image 
-                        src={user.avatar} 
-                        alt={user.name} 
-                        width={32} 
-                        height={32} 
-                        className="object-cover" 
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center">
-                        <span className="text-white text-sm">{user?.name?.charAt(0)?.toUpperCase()}</span>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-medium hidden sm:inline-block max-w-[120px] truncate text-gray-700 dark:text-gray-300">{user.name}</span>
-                </button>
+                {/* 在移动端，头像点击直接跳转到个人资料页面 */}
+                {isMobile ? (
+                  <Link href="/profile">
+                    <img
+                      src={user.avatar || "/default-avatar.png"}
+                      alt={user.name || "用户头像"}
+                      className="w-8 h-8 rounded-full border-2 border-transparent hover:border-blue-400 transition-all duration-200"
+                    />
+                  </Link>
+                ) : (
+                  <img
+                    src={user.avatar || "/default-avatar.png"}
+                    alt={user.name || "用户头像"}
+                    className="w-8 h-8 rounded-full border-2 border-transparent group-hover:border-blue-400 transition-all duration-200 cursor-pointer"
+                  />
+                )}
                 
+                {/* 桌面端下拉菜单 - 只在非移动端显示 */}
                 <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg hidden group-hover:block dark:bg-gray-800">
                   <div className="absolute top-[-10px] left-0 right-0 h-[10px] bg-transparent"></div>
                   <Link 
@@ -372,17 +370,15 @@ const Header = () => {
             
             {user && (
               <li>
-                <Link
-                  href="/profile"
-                  className={`block py-2 px-4 rounded-lg ${
-                    pathname === "/profile"
-                      ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2 px-4 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
-                  我的
-                </Link>
+                  退出登录
+                </button>
               </li>
             )}
             
