@@ -287,6 +287,7 @@ export default function CommentSection({ postId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
+  const [totalCommentCount, setTotalCommentCount] = useState(0);
   
   // 处理回复逻辑
   const handleReply = (comment) => {
@@ -334,6 +335,8 @@ export default function CommentSection({ postId }) {
       // 组织评论为树结构
       const organizedComments = organizeComments(data);
       setComments(organizedComments);
+      // 计算总评论数 - 直接使用data长度，包含所有评论和回复
+      setTotalCommentCount(data.length);
     } catch (err) {
       console.error('获取评论错误:', err);
       setError(err.message);
@@ -351,7 +354,7 @@ export default function CommentSection({ postId }) {
   
   return (
     <section className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
-      <h3 className="text-xl font-bold mb-6">评论 ({comments.length})</h3>
+      <h3 className="text-xl font-bold mb-6">评论 ({totalCommentCount})</h3>
       
       {isLoading ? (
         <div className="flex justify-center items-center py-6">

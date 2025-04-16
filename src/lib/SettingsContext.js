@@ -15,35 +15,14 @@ const defaultSettings = {
 };
 
 // 设置提供者组件
-export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [isLoading, setIsLoading] = useState(true);
+export function SettingsProvider({ initialSettings, children }) {
+  // 使用从服务器组件传递的初始设置，并添加pageTitle
+  const [settings, setSettings] = useState({
+    ...initialSettings,
+    pageTitle: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 在客户端组件加载时获取设置
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/settings');
-        if (response.ok) {
-          const data = await response.json();
-          // 合并获取的设置与默认pageTitle
-          setSettings(prev => ({
-            ...data,
-            pageTitle: prev.pageTitle
-          }));
-        }
-      } catch (error) {
-        console.error('获取设置失败:', error);
-        // 如果获取失败，保持使用默认设置
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSettings();
-  }, []);
-  
   // 获取页面标题 - 使用useCallback稳定函数引用
   const setPageTitle = useCallback((title) => {
     setSettings(prev => ({...prev, pageTitle: title}));
@@ -80,12 +59,32 @@ export function SettingsProvider({ children }) {
     }
   };
 
+  // 可选：添加一个刷新设置的函数，用于需要获取最新设置的场景
+  const refreshSettings = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(prev => ({
+          ...data,
+          pageTitle: prev.pageTitle
+        }));
+      }
+    } catch (error) {
+      console.error('刷新设置失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // 提供上下文值
   const value = {
     settings,
     isLoading,
     updateSettings,
-    setPageTitle
+    setPageTitle,
+    refreshSettings
   };
 
   return (

@@ -100,7 +100,7 @@ const PostDetailClient = ({ postId, initialData }) => {
     
     // 组件卸载时重置标题
     return () => {
-      document.title = "CyBlog";
+      document.title = "CyBlog ｜ 技术博客";
     };
   }, [postId, initialData]);
 
