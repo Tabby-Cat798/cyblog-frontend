@@ -31,7 +31,7 @@ const BlogList = ({ posts = [] }) => {
           setVisiblePosts(prev => [...prev, post]);
         }, 100 * index); // 每隔100ms添加一个博文
       });
-    }, 300); // 减少加载延迟
+    }, 0); // 减少加载延迟
     
     return () => clearTimeout(loadingTimer);
   }, [posts]);

@@ -284,7 +284,7 @@ const CommentForm = ({ postId, onCommentSubmitted, replyTo, onCancelReply }) => 
 // 主评论区组件
 export default function CommentSection({ postId }) {
   const [comments, setComments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [totalCommentCount, setTotalCommentCount] = useState(0);
