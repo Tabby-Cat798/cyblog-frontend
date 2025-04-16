@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [useGithubProxy, setUseGithubProxy] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -99,7 +100,7 @@ export default function LoginPage() {
   const handleGitHubLogin = async () => {
     try {
       setIsSubmitting(true);
-      await githubLogin();
+      await githubLogin(useGithubProxy);
       // 注意：此函数返回后页面将重定向到GitHub，所以不需要额外处理
     } catch (error) {
       console.error('GitHub登录错误:', error);
@@ -233,14 +234,37 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6">
-            <button
-              type="button"
-              onClick={handleGitHubLogin}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-            >
-              <FontAwesomeIcon icon={faGithub} className="mr-2 h-5 w-5" />
-              使用GitHub登录
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  或使用其他方式登录
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleGitHubLogin}
+                disabled={isSubmitting}
+                className="w-full flex justify-center items-center gap-3 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                <FontAwesomeIcon icon={faGithub} className="h-5 w-5" />
+                {isSubmitting ? "处理中..." : `用 GitHub ${useGithubProxy ? "(代理)" : "(直连)"} 登录`}
+              </button>
+
+              {/* 切换GitHub登录模式 */}
+              <button
+                type="button"
+                onClick={() => setUseGithubProxy(!useGithubProxy)}
+                className="text-xs text-blue-600 dark:text-blue-400 mt-1 hover:underline"
+              >
+                切换至 {useGithubProxy ? "直接连接" : "代理"} 模式
+              </button>
+            </div>
           </div>
         </div>
         

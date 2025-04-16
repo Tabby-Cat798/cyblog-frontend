@@ -42,6 +42,28 @@ const createThrottle = (delay = 1000) => {
 const throttle = createThrottle(1000);
 
 export async function middleware(request) {
+  // 处理GitHub代理API的CORS
+  if (request.nextUrl.pathname.startsWith('/api/github-proxy')) {
+    // 从管理系统返回的响应
+    const response = NextResponse.next();
+    
+    // 设置CORS头
+    response.headers.set('Access-Control-Allow-Origin', '*'); // 或指定管理系统域名
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // 处理预检请求
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { 
+        status: 204,
+        headers: response.headers
+      });
+    }
+    
+    return response;
+  }
+  
+  // 以下是原有的访问统计功能
   // 获取请求信息
   const headersList = await headers();
   const ip = headersList.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
@@ -109,11 +131,16 @@ export const config = {
   matcher: [
     /*
      * 匹配所有路径，除了:
-     * - api (API路由)
+     * - api (排除大部分API路由)
      * - _next/static (静态文件)
      * - _next/image (图片优化)
      * - favicon.ico (网站图标)
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    
+    /*
+     * 特别包含GitHub代理API路由
+     */
+    '/api/github-proxy/:path*',
   ],
 }; 

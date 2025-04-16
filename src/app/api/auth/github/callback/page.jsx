@@ -16,11 +16,13 @@ function GitHubCallbackContent() {
       try {
         const code = searchParams.get('code');
         const state = searchParams.get('state');
+        const useProxy = searchParams.get('proxy') === 'true';
         
         console.log("GitHub回调页面 - 收到参数:", { 
           hasCode: !!code, 
           codeLength: code?.length,
-          hasState: !!state
+          hasState: !!state,
+          useProxy
         });
 
         if (!code) {
@@ -28,11 +30,14 @@ function GitHubCallbackContent() {
           return;
         }
 
-        // 调用后端API处理GitHub登录
-        setStatus("正在与GitHub通信...");
-        console.log("开始调用后端API处理GitHub登录...");
+        // 根据useProxy参数选择API端点
+        const apiEndpoint = useProxy ? '/api/auth/github-proxy' : '/api/auth/github';
         
-        const response = await fetch('/api/auth/github', {
+        // 调用后端API处理GitHub登录
+        setStatus(useProxy ? "正在通过代理与GitHub通信..." : "正在与GitHub通信...");
+        console.log(`开始调用${useProxy ? '代理' : '直接'}API处理GitHub登录...`);
+        
+        const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

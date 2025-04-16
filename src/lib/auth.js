@@ -68,20 +68,30 @@ export function AuthProvider({ children }) {
   };
   
   // GitHub登录
-  const githubLogin = async () => {
+  const githubLogin = async (useProxy = false) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/auth/github');
+      // 根据参数选择API端点
+      const apiEndpoint = useProxy ? '/api/auth/github-proxy' : '/api/auth/github';
+      const response = await fetch(apiEndpoint);
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || 'GitHub登录初始化失败');
       }
       
-      // 重定向到GitHub授权页面
-      window.location.href = data.authUrl;
+      // 重定向到GitHub授权页面，如果使用代理，添加proxy=true参数
+      let authUrl = data.authUrl;
+      if (useProxy) {
+        // 添加proxy参数以便回调页面知道使用代理API
+        const url = new URL(authUrl);
+        url.searchParams.append('proxy', 'true');
+        authUrl = url.toString();
+      }
+      
+      window.location.href = authUrl;
       
       // 注意：此处不会设置用户状态，因为页面会重定向到GitHub
       // 用户状态将在回调处理后通过fetchCurrentUser获取
