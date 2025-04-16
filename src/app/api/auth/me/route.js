@@ -27,15 +27,17 @@ export async function GET() {
         new TextEncoder().encode(JWT_SECRET)
       );
       
-      // 获取用户ID
-      const userId = payload.id;
+      // 获取用户ID - 兼容两种可能的字段名
+      const userId = payload.userId || payload.id;
       
       if (!userId) {
         return NextResponse.json(
-          { error: '无效的令牌' },
+          { error: '无效的令牌 - 缺少用户ID' },
           { status: 401 }
         );
       }
+      
+      console.log('从JWT解析出用户ID:', userId);
       
       // 从数据库获取最新的用户信息
       const client = await clientPromise;
