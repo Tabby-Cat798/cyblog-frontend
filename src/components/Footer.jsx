@@ -8,7 +8,7 @@ const Footer = () => {
   const [hoveredIcon, setHoveredIcon] = useState(null);
   
   return (
-    <footer className="py-4 mt-auto">
+    <footer className="pt-4 pb-2 mt-auto">
       <div className="container mx-auto px-4">
         {/* 社交媒体图标 */}
         <div className="flex justify-center space-x-8 mb-2">
@@ -77,6 +77,18 @@ const Footer = () => {
         
         {/* 版权信息 */}
         <div className="text-center text-gray-600 dark:text-gray-400 text-sm">
+          
+          {/* 备案信息 */}
+          <p className="mt-2 text-xs">
+            <a 
+              href="https://beian.miit.gov.cn/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-blue-500 transition-colors duration-200"
+            >
+              陕ICP备2024047964号-1
+            </a>
+          </p>
           <p>Copyright © {currentYear} cyblog.fun. All Rights Reserved.
           </p>
         </div>

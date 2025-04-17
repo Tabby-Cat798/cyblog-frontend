@@ -32,7 +32,7 @@ export default function HomeServer({ initialData }) {
   return (
     <div>
       {/* 添加筛选按钮 */}
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => filterPosts('all')}
           className={`px-4 py-2 rounded-md transition-colors cursor-pointer ${
@@ -52,6 +52,27 @@ export default function HomeServer({ initialData }) {
           }`}
         >
           软件技术
+        </button>
+
+        <button
+          onClick={() => filterPosts('interview')}
+          className={`px-4 py-2 rounded-md transition-colors cursor-pointer ${
+            activeFilter === 'interview' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          面试经验
+        </button>
+        <button
+          onClick={() => filterPosts('algorithm')}
+          className={`px-4 py-2 rounded-md transition-colors cursor-pointer ${
+            activeFilter === 'algorithm' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          LeetCode
         </button>
         <button
           onClick={() => filterPosts('daily')}
