@@ -325,8 +325,8 @@ const TableOfContents = ({ content }) => {
           if (!element) return null;
           
           const rect = element.getBoundingClientRect();
-          // 判断元素是否在视口中
-          const isVisible = rect.top >= 0 && rect.top <= window.innerHeight / 2;
+          // 判断元素是否在视口中，扩大检测范围，更灵敏地捕获标题
+          const isVisible = rect.top >= -50 && rect.top <= window.innerHeight * 0.6;
           
           return isVisible ? { id, position: rect.top } : null;
         })
@@ -338,22 +338,41 @@ const TableOfContents = ({ content }) => {
       }
     };
     
-    // 节流版本的滚动处理器
-    let scrollTimer = null;
+    // 使用更高效的50ms节流机制
+    let scrollTimeout = null;
+    let lastScrollHandled = 0;
+    
     const throttledScroll = () => {
-      if (scrollTimer) return;
-      scrollTimer = setTimeout(() => {
+      const now = Date.now();
+      const timeElapsed = now - lastScrollHandled;
+      
+      // 清除之前的timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // 如果自上次处理后已经过了至少50ms，立即处理
+      if (timeElapsed >= 50) {
         handleScroll();
-        scrollTimer = null;
-      }, 200);
+        lastScrollHandled = now;
+      } else {
+        // 否则，安排在剩余时间后处理
+        scrollTimeout = setTimeout(() => {
+          handleScroll();
+          lastScrollHandled = Date.now();
+        }, 50 - timeElapsed);
+      }
     };
     
+    // 添加使用节流的滚动事件监听器
     window.addEventListener('scroll', throttledScroll, { passive: true });
     
     return () => {
       clearTimeout(timer);
       window.removeEventListener('scroll', throttledScroll);
-      if (scrollTimer) clearTimeout(scrollTimer);
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
     };
   }, [content, activeId]);
 
