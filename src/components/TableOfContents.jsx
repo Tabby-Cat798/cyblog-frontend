@@ -60,34 +60,72 @@ const TableOfContents = ({ content }) => {
 
   // 监听内容渲染完成
   useEffect(() => {
+    // 使用一个递减计数器来限制重试次数
+    let retryCount = 10;
+    
     const checkContentReady = () => {
       const headings = extractHeadings(content);
       if (headings.length === 0) return;
 
-      // 尝试找到第一个标题元素
-      const firstHeading = document.getElementById(headings[0].id);
+      // 尝试找到标题元素
+      let foundHeadings = 0;
+      for (const heading of headings.slice(0, 3)) { // 检查前三个标题
+        if (document.getElementById(heading.id)) {
+          foundHeadings++;
+        }
+      }
       
-      if (firstHeading) {
+      // 如果找到了至少一个标题元素，初始化目录
+      if (foundHeadings > 0) {
+        console.log('目录初始化: 找到标题元素，初始化IntersectionObserver');
         initializeTableOfContents(headings);
+      } else if (retryCount > 0) {
+        // 递减重试计数并设置更长的延迟
+        retryCount--;
+        console.log(`目录初始化: 未找到标题元素，剩余重试次数 ${retryCount}`);
+        setTimeout(checkContentReady, 300); // 增加延迟时间
       } else {
-        setTimeout(checkContentReady, 100);
+        console.log('目录初始化: 达到最大重试次数，强制初始化');
+        // 达到最大重试次数，强制初始化
+        initializeTableOfContents(headings);
       }
     };
 
-    checkContentReady();
+    // 使用延迟以确保在ISR环境下有足够的时间进行水合
+    const timer = setTimeout(checkContentReady, 500);
+    
+    return () => clearTimeout(timer);
   }, [content]);
 
   // 初始化目录
   const initializeTableOfContents = (headings) => {
-    // 筛选出所有标题的ID和元素对应关系（不只是二级标题）
+    // 筛选出所有标题的ID和元素对应关系
     const headingElements = {};
+    let validHeadingCount = 0;
     
     headings.forEach(({ id, level }) => {
       const element = document.getElementById(id);
       if (element) {
         headingElements[id] = element;
+        validHeadingCount++;
       }
     });
+    
+    // 如果没有找到有效的标题元素，尝试修复ID生成问题
+    if (validHeadingCount === 0) {
+      console.log('未找到有效标题元素，尝试修复ID选择器');
+      
+      // 尝试查找所有h1-h6元素，不依赖于ID
+      const allHeadingElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      if (allHeadingElements.length > 0) {
+        console.log(`找到${allHeadingElements.length}个标题元素，但ID不匹配`);
+        
+        // 如果有标题但ID不匹配，至少显示第一个标题为活动项
+        if (headings.length > 0) {
+          setActiveId(headings[0].id);
+        }
+      }
+    }
 
     // 使用 Intersection Observer 追踪阅读位置
     const observer = new IntersectionObserver(
@@ -108,7 +146,6 @@ const TableOfContents = ({ content }) => {
         // 如果有可见标题，设置第一个为活动项
         if (visibleHeadings.length > 0) {
           setActiveId(visibleHeadings[0].id);
-          // 用户滚动时不更新URL，只更新高亮
         }
       },
       {
@@ -125,6 +162,7 @@ const TableOfContents = ({ content }) => {
 
     // 初始检查当前可见的标题
     if (!recentClickRef.current) {
+      // 增加延迟，确保DOM完全渲染
       setTimeout(() => {
         // 获取所有可见的标题元素
         const visibleHeadings = headings
@@ -142,15 +180,21 @@ const TableOfContents = ({ content }) => {
           .sort((a, b) => a.position - b.position); // 按接近顶部的程度排序
         
         if (visibleHeadings.length > 0) {
+          console.log('初始检查: 找到可见标题', visibleHeadings[0].id);
           setActiveId(visibleHeadings[0].id);
         } else if (headings.length > 0) {
           // 如果没有可见的标题，默认激活第一个
+          console.log('初始检查: 未找到可见标题，默认激活第一个', headings[0].id);
           setActiveId(headings[0].id);
         }
-      }, 100);
+        
+        // 手动触发一次滚动事件，确保IntersectionObserver回调被调用
+        window.dispatchEvent(new Event('scroll'));
+      }, 800);
     }
 
     return () => {
+      // 停止观察所有元素
       Object.values(headingElements).forEach(element => {
         observer.unobserve(element);
       });
@@ -221,6 +265,97 @@ const TableOfContents = ({ content }) => {
 
   // 创建一个状态用于移动端目录的显示/隐藏
   const [showMobileToc, setShowMobileToc] = useState(false);
+
+  // 添加一个组件挂载后的ISR水合处理机制
+  useEffect(() => {
+    if (typeof window === 'undefined') return; // 跳过服务器端渲染
+    
+    // 确保在ISR水合完成后再次检查目录高亮
+    const handleHydrationComplete = () => {
+      // 确保已有标题内容时才尝试激活
+      const headings = extractHeadings(content);
+      if (headings.length === 0) return;
+      
+      // 检查当前活动ID是否有效
+      if (!activeId && headings.length > 0) {
+        console.log('ISR水合后激活目录: 设置默认活动项', headings[0].id);
+        setActiveId(headings[0].id);
+      }
+      
+      // 手动触发一次滚动检测
+      window.dispatchEvent(new Event('scroll'));
+      
+      // 检查URL哈希，如果存在则滚动到对应位置
+      if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        const element = document.getElementById(hash);
+        if (element) {
+          // 等待DOM完全渲染
+          setTimeout(() => {
+            // 考虑导航栏高度，设置偏移量
+            const headerOffset = 100;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+            
+            setActiveId(hash);
+          }, 300);
+        }
+      }
+    };
+    
+    // 延迟执行，确保ISR水合完成
+    const timer = setTimeout(handleHydrationComplete, 1500);
+    
+    // 添加滚动事件监听器，确保在滚动时目录能正确高亮
+    const handleScroll = () => {
+      if (recentClickRef.current) return; // 如果是用户点击导致的滚动，不处理
+      
+      // 定期检查可见标题
+      const headings = extractHeadings(content);
+      
+      // 获取所有可见的标题元素
+      const visibleHeadings = headings
+        .map(({ id }) => {
+          const element = document.getElementById(id);
+          if (!element) return null;
+          
+          const rect = element.getBoundingClientRect();
+          // 判断元素是否在视口中
+          const isVisible = rect.top >= 0 && rect.top <= window.innerHeight / 2;
+          
+          return isVisible ? { id, position: rect.top } : null;
+        })
+        .filter(Boolean) // 过滤掉不可见的标题
+        .sort((a, b) => a.position - b.position); // 按接近顶部的程度排序
+      
+      if (visibleHeadings.length > 0 && visibleHeadings[0].id !== activeId) {
+        setActiveId(visibleHeadings[0].id);
+      }
+    };
+    
+    // 节流版本的滚动处理器
+    let scrollTimer = null;
+    const throttledScroll = () => {
+      if (scrollTimer) return;
+      scrollTimer = setTimeout(() => {
+        handleScroll();
+        scrollTimer = null;
+      }, 200);
+    };
+    
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', throttledScroll);
+      if (scrollTimer) clearTimeout(scrollTimer);
+    };
+  }, [content, activeId]);
 
   return (
     <>
