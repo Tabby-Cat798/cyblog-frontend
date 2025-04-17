@@ -245,11 +245,14 @@ const Header = () => {
                     />
                   </Link>
                 ) : (
-                  <img
-                    src={user.avatar || "/default-avatar.png"}
-                    alt={user.name || "用户头像"}
-                    className="w-8 h-8 rounded-full border-2 border-transparent group-hover:border-blue-400 transition-all duration-200 cursor-pointer"
-                  />
+                  <div className="flex items-center space-x-2 px-1.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                    <img
+                      src={user.avatar || "/default-avatar.png"}
+                      alt={user.name || "用户头像"}
+                      className="w-8 h-8 rounded-full border-2 border-transparent group-hover:border-blue-400 transition-all duration-200"
+                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[100px] truncate">{user.name}</span>
+                  </div>
                 )}
                 
                 {/* 桌面端下拉菜单 - 只在非移动端显示 */}
