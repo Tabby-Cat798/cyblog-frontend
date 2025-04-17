@@ -12,6 +12,8 @@ const PostDetailClient = ({ postId, initialData }) => {
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [viewCount, setViewCount] = useState(initialData?.viewCount || 0);
+  // 添加标记，确保阅览量增加逻辑只执行一次
+  const [hasAttemptedViewIncrement, setHasAttemptedViewIncrement] = useState(false);
 
   // 获取全局设置
   const { settings, setPageTitle } = useSettings();
@@ -61,6 +63,10 @@ const PostDetailClient = ({ postId, initialData }) => {
         setPost(initialData);
         // 确保设置正确的初始阅览量
         setViewCount(initialData.viewCount || 0);
+        // 设置页面标题
+        if (initialData.title) {
+          document.title = `${initialData.title} | CyBlog`;
+        }
         return;
       }
 
@@ -80,10 +86,7 @@ const PostDetailClient = ({ postId, initialData }) => {
           document.title = `${data.title} | CyBlog`;
         }
         
-        // 在客户端环境下才执行增加阅览量的操作
-        if (typeof window !== 'undefined') {
-          await incrementViewCount(postId);
-        }
+        // 移除阅览量增加逻辑，由专门的useEffect处理
       } catch (err) {
         setError(err.message);
       } finally {
@@ -91,7 +94,7 @@ const PostDetailClient = ({ postId, initialData }) => {
       }
     };
 
-    if (postId && !initialData) {
+    if (postId) {
       fetchPost();
     }
     
@@ -103,13 +106,16 @@ const PostDetailClient = ({ postId, initialData }) => {
 
   // 专门处理阅览量增加的useEffect，与数据获取分离
   useEffect(() => {
-    // 确保在客户端，且有postId才执行
-    if (typeof window !== 'undefined' && postId) {
+    // 确保在客户端，且有postId，且未尝试过增加阅览量
+    if (typeof window !== 'undefined' && postId && !hasAttemptedViewIncrement) {
       const handleViewCount = async () => {
         try {
           await incrementViewCount(postId);
         } catch (error) {
           console.error('独立处理阅览量失败:', error);
+        } finally {
+          // 无论成功失败，都标记为已尝试，避免重复执行
+          setHasAttemptedViewIncrement(true);
         }
       };
       
@@ -120,7 +126,7 @@ const PostDetailClient = ({ postId, initialData }) => {
       
       return () => clearTimeout(timer);
     }
-  }, [postId]); // 只依赖postId，确保初始渲染和postId变化时都会执行
+  }, [postId, hasAttemptedViewIncrement]); // 依赖postId和hasAttemptedViewIncrement
 
   if (isLoading) {
     return (
