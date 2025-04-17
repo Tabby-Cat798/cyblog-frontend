@@ -12,7 +12,7 @@ const PostDetailClient = ({ postId, initialData }) => {
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState(null);
   const [viewCount, setViewCount] = useState(initialData?.viewCount || 0);
-  // 添加标记，确保阅览量增加逻辑只执行一次
+  // 标记是否已尝试增加阅览量，避免重复执行
   const [hasAttemptedViewIncrement, setHasAttemptedViewIncrement] = useState(false);
 
   // 获取全局设置
@@ -33,8 +33,12 @@ const PostDetailClient = ({ postId, initialData }) => {
       const lastViewTime = viewedPosts[id] || 0;
       const twentyFourHours = 24 * 60 * 60 * 1000; // 24小时的毫秒数
       
-      if (currentTime - lastViewTime > twentyFourHours) {
-        // 更新本地存储中的访问时间记录
+      // 判断是否需要更新服务器端阅览量
+      const shouldIncrementServerCount = currentTime - lastViewTime > twentyFourHours;
+      
+      if (shouldIncrementServerCount) {
+        // 无论如何都更新本地存储中的访问时间记录
+        // 这样在24小时内再次访问时不会重复计数
         viewedPosts[id] = currentTime;
         localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
         
@@ -46,28 +50,34 @@ const PostDetailClient = ({ postId, initialData }) => {
           },
         });
         
-        if (response.ok) {
-          // 更新本地显示的阅览量
-          setViewCount(prev => prev + 1);
-        }
+        // 注意：这里不再更新UI中的阅览量，保持与initialData或API获取的数据一致
+        // 移除以下代码：
+        // if (response.ok) {
+        //   setViewCount(prev => prev + 1);
+        // }
+        
+        return { success: response.ok, shouldIncrementServerCount };
       }
+      
+      return { success: true, shouldIncrementServerCount: false };
     } catch (error) {
-      console.error('增加阅览量失败:', error);
+      console.error('阅览量处理失败:', error);
+      return { success: false, error };
     }
   };
 
   useEffect(() => {
     const fetchPost = async () => {
-      // 如果已经有初始数据，不需要重新获取
+      // 如果已经有初始数据，不需要重新获取数据
       if (initialData) {
         setPost(initialData);
-        // 确保设置正确的初始阅览量
         setViewCount(initialData.viewCount || 0);
+        
         // 设置页面标题
         if (initialData.title) {
           document.title = `${initialData.title} | CyBlog`;
         }
-        return;
+        return; // 有initialData时仍然提前退出API调用
       }
 
       setIsLoading(true);
@@ -85,8 +95,6 @@ const PostDetailClient = ({ postId, initialData }) => {
         if (data.title) {
           document.title = `${data.title} | CyBlog`;
         }
-        
-        // 移除阅览量增加逻辑，由专门的useEffect处理
       } catch (err) {
         setError(err.message);
       } finally {
@@ -110,9 +118,13 @@ const PostDetailClient = ({ postId, initialData }) => {
     if (typeof window !== 'undefined' && postId && !hasAttemptedViewIncrement) {
       const handleViewCount = async () => {
         try {
+          // 异步增加阅览量，但不更新UI显示
+          // 这样保证显示的阅览量只来自initialData或API，而不是客户端计算结果
+          // 这样能确保首页和详情页显示的阅览量一致
           await incrementViewCount(postId);
+          console.log('阅览量增加请求已发送，但UI不立即更新');
         } catch (error) {
-          console.error('独立处理阅览量失败:', error);
+          console.error('阅览量增加失败:', error);
         } finally {
           // 无论成功失败，都标记为已尝试，避免重复执行
           setHasAttemptedViewIncrement(true);
