@@ -65,6 +65,30 @@ const PostDetailClient = ({ postId, initialData }) => {
       let viewedPosts;
       try {
         viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+        
+        // 检查是否有未来的时间戳，并修复它们
+        const now = new Date().getTime();
+        let hasFutureTimestamps = false;
+        
+        for (const postId in viewedPosts) {
+          if (viewedPosts[postId] > now) {
+            console.warn('[阅览量] 检测到未来时间戳:', {
+              文章ID: postId,
+              时间戳: viewedPosts[postId],
+              对应日期: new Date(viewedPosts[postId]).toLocaleString(),
+              当前时间: new Date(now).toLocaleString()
+            });
+            // 重置为过去的时间戳(当前时间减去25小时)
+            viewedPosts[postId] = now - (25 * 60 * 60 * 1000);
+            hasFutureTimestamps = true;
+          }
+        }
+        
+        // 如果发现并修复了未来时间戳，保存修复后的数据
+        if (hasFutureTimestamps) {
+          localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+          console.log('[阅览量] 已修复未来时间戳，保存修复后的记录');
+        }
       } catch (e) {
         console.warn('[阅览量] 解析localStorage数据失败，将重置:', e);
         viewedPosts = {};
@@ -78,10 +102,24 @@ const PostDetailClient = ({ postId, initialData }) => {
         显示设置: showViewCount
       });
       
-      // 检查上次访问时间，如果超过24小时才算新的访问
-      const currentTime = new Date().getTime();
-      const lastViewTime = viewedPosts[id] || 0;
+      // 获取当前时间
+      let currentTime = new Date().getTime();
+      // 确保currentTime是有效的、非未来的时间戳
+      if (currentTime > Date.now() + 60000) { // 允许最多1分钟的时钟误差
+        console.error('[阅览量] 检测到系统时间异常，可能设置了未来时间');
+        // 使用安全的时间
+        currentTime = Date.now();
+      }
+      
+      let lastViewTime = viewedPosts[id] || 0;
       const twentyFourHours = 24 * 60 * 60 * 1000; // 24小时的毫秒数
+      
+      // 检查lastViewTime是否是未来时间
+      if (lastViewTime > currentTime) {
+        console.warn('[阅览量] 当前文章记录了未来的访问时间，将重置为过去时间');
+        // 重置为过去的时间，强制更新阅览量
+        lastViewTime = 0;
+      }
       
       if (currentTime - lastViewTime > twentyFourHours) {
         // 输出即将更新的信息
@@ -171,7 +209,149 @@ const PostDetailClient = ({ postId, initialData }) => {
     }
   };
 
+  // 添加全局调试函数
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // 为开发调试提供全局访问函数
+      window.cyblogDebug = {
+        // 查看localStorage中的阅览量记录
+        viewLocalStorage: () => {
+          try {
+            const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+            console.log('[调试] localStorage中的阅览量记录:', viewedPosts);
+            
+            // 转换时间戳为可读日期
+            const formatted = {};
+            for (const postId in viewedPosts) {
+              formatted[postId] = {
+                timestampMs: viewedPosts[postId],
+                date: new Date(viewedPosts[postId]).toLocaleString(),
+                hoursAgo: Math.floor((Date.now() - viewedPosts[postId]) / (60 * 60 * 1000))
+              };
+            }
+            console.log('[调试] 格式化后的记录:', formatted);
+            return formatted;
+          } catch (e) {
+            console.error('[调试] 读取失败:', e);
+            return null;
+          }
+        },
+        
+        // 重置指定文章的阅览量记录
+        resetArticleView: (articleId) => {
+          try {
+            if (!articleId) {
+              console.error('[调试] 需要提供文章ID');
+              return false;
+            }
+            
+            const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+            if (viewedPosts[articleId]) {
+              delete viewedPosts[articleId];
+              localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+              console.log(`[调试] 已重置文章(${articleId})的访问记录`);
+              return true;
+            } else {
+              console.log(`[调试] 未找到文章(${articleId})的访问记录`);
+              return false;
+            }
+          } catch (e) {
+            console.error('[调试] 重置失败:', e);
+            return false;
+          }
+        },
+        
+        // 重置所有阅览量记录
+        resetAllViews: () => {
+          try {
+            localStorage.setItem('viewedPosts', '{}');
+            localStorage.removeItem('viewedPosts_fixed');
+            console.log('[调试] 已重置所有文章访问记录');
+            return true;
+          } catch (e) {
+            console.error('[调试] 重置失败:', e);
+            return false;
+          }
+        },
+        
+        // 手动增加当前文章阅览量
+        forceIncreaseView: async () => {
+          if (!postId) {
+            console.error('[调试] 无法获取当前文章ID');
+            return false;
+          }
+          
+          try {
+            console.log(`[调试] 正在手动增加文章(${postId})的阅览量...`);
+            const response = await fetch(`/api/posts/${postId}/view`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            });
+            
+            if (response.ok) {
+              console.log('[调试] 阅览量增加成功');
+              setViewCount(prev => prev + 1);
+              return true;
+            } else {
+              console.error('[调试] 阅览量增加失败:', await response.text());
+              return false;
+            }
+          } catch (e) {
+            console.error('[调试] 阅览量增加出错:', e);
+            return false;
+          }
+        }
+      };
+      
+      console.log('[提示] 已添加调试功能，可通过控制台使用以下命令:');
+      console.log('- cyblogDebug.viewLocalStorage() - 查看当前记录');
+      console.log('- cyblogDebug.resetArticleView("文章ID") - 重置指定文章记录');
+      console.log('- cyblogDebug.resetAllViews() - 重置所有记录');
+      console.log('- cyblogDebug.forceIncreaseView() - 强制增加当前文章阅览量');
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    // 一次性修复localStorage中的未来时间戳问题
+    try {
+      // 检查是否已执行过修复
+      if (localStorage.getItem('viewedPosts_fixed') !== 'true') {
+        console.log('[阅览量] 开始检查并修复localStorage中的时间戳...');
+        
+        // 获取并解析现有数据
+        const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '{}');
+        const now = new Date().getTime();
+        let needsFix = false;
+        
+        // 检查每个条目
+        for (const postId in viewedPosts) {
+          if (viewedPosts[postId] > now) {
+            console.warn('[阅览量] 发现未来时间戳:', {
+              文章ID: postId,
+              时间: new Date(viewedPosts[postId]).toLocaleString(),
+              距离现在: `${Math.floor((viewedPosts[postId] - now) / (60 * 60 * 1000))}小时`
+            });
+            // 设置为24小时前的时间，这样用户可以立即增加阅览量
+            viewedPosts[postId] = now - (25 * 60 * 60 * 1000);
+            needsFix = true;
+          }
+        }
+        
+        // 如果发现问题，保存修复后的数据
+        if (needsFix) {
+          localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
+          console.log('[阅览量] 已修复未来时间戳问题');
+        } else {
+          console.log('[阅览量] 未发现时间戳问题');
+        }
+        
+        // 标记为已修复，避免重复执行
+        localStorage.setItem('viewedPosts_fixed', 'true');
+      }
+    } catch (error) {
+      console.error('[阅览量] 修复时间戳失败:', error);
+    }
+    
     const fetchPost = async () => {
       // 如果已经有初始数据，不需要重新获取
       if (initialData) {

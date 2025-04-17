@@ -96,8 +96,17 @@ export async function middleware(request) {
         token,
         new TextEncoder().encode(process.env.JWT_SECRET)
       );
-      userId = payload.id;
+      // 兼容不同的字段名：优先使用userId，如果不存在则使用id
+      userId = payload.userId || payload.id;
+      
+      // 调试日志
+      console.log('JWT载荷提取用户ID:', { 
+        hasUserId: !!payload.userId, 
+        hasId: !!payload.id, 
+        extractedId: userId 
+      });
     } catch (error) {
+      console.error('JWT验证失败:', error.message);
       // token无效，继续作为未登录用户处理
     }
   }
