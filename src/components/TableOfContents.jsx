@@ -270,6 +270,24 @@ const TableOfContents = ({ content }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return; // 跳过服务器端渲染
     
+    // 添加变量跟踪用户是否已手动滚动
+    let userHasScrolledManually = false;
+    
+    // 用户滚动检测函数
+    const detectUserScroll = () => {
+      userHasScrolledManually = true;
+    };
+    
+    // 监听用户滚动事件
+    window.addEventListener('wheel', detectUserScroll, { passive: true });
+    window.addEventListener('touchmove', detectUserScroll, { passive: true });
+    window.addEventListener('keydown', (e) => {
+      // 检测键盘滚动（上下键、PageUp/Down等）
+      if(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', 'Space'].includes(e.code)) {
+        detectUserScroll();
+      }
+    });
+    
     // 确保在ISR水合完成后再次检查目录高亮
     const handleHydrationComplete = () => {
       // 确保已有标题内容时才尝试激活
@@ -285,24 +303,27 @@ const TableOfContents = ({ content }) => {
       // 手动触发一次滚动检测
       window.dispatchEvent(new Event('scroll'));
       
-      // 检查URL哈希，如果存在则滚动到对应位置
-      if (window.location.hash) {
+      // 检查URL哈希，如果存在则滚动到对应位置 - 但仅当用户没有手动滚动时
+      if (window.location.hash && !userHasScrolledManually) {
         const hash = window.location.hash.substring(1);
         const element = document.getElementById(hash);
         if (element) {
           // 等待DOM完全渲染
           setTimeout(() => {
-            // 考虑导航栏高度，设置偏移量
-            const headerOffset = 100;
-            const elementPosition = element.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-            
-            window.scrollTo({
-              top: offsetPosition,
-              behavior: 'smooth'
-            });
-            
-            setActiveId(hash);
+            // 再次检查用户是否在这段时间内滚动过
+            if (!userHasScrolledManually && !recentClickRef.current) {
+              // 考虑导航栏高度，设置偏移量
+              const headerOffset = 100;
+              const elementPosition = element.getBoundingClientRect().top;
+              const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+              
+              window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+              });
+              
+              setActiveId(hash);
+            }
           }, 300);
         }
       }
@@ -313,6 +334,9 @@ const TableOfContents = ({ content }) => {
     
     // 添加滚动事件监听器，确保在滚动时目录能正确高亮
     const handleScroll = () => {
+      // 如果检测到滚动，标记用户已手动滚动
+      detectUserScroll();
+      
       if (recentClickRef.current) return; // 如果是用户点击导致的滚动，不处理
       
       // 定期检查可见标题
@@ -370,6 +394,9 @@ const TableOfContents = ({ content }) => {
     return () => {
       clearTimeout(timer);
       window.removeEventListener('scroll', throttledScroll);
+      window.removeEventListener('wheel', detectUserScroll);
+      window.removeEventListener('touchmove', detectUserScroll);
+      window.removeEventListener('keydown', detectUserScroll);
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }

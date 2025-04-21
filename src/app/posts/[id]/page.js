@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const client = await clientPromise;
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PostDetail(props) {
-  const { id } = props.params;
+  const { id } = await props.params;
   
   try {
     // 获取初始数据
