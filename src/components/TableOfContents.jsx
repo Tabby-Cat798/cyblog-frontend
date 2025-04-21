@@ -254,7 +254,7 @@ const TableOfContents = ({ content }) => {
     }
     clickTimeoutRef.current = setTimeout(() => {
       recentClickRef.current = false;
-    }, 2000);
+    }, 500);
   };
 
   const headings = extractHeadings(content);
