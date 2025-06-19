@@ -7,7 +7,7 @@ import TableOfContents from './TableOfContents';
 import CommentSection from './CommentSection';
 import { useSettings } from '@/lib/SettingsContext';
 
-const PostDetailClient = ({ postId, initialData }) => {
+const PostDetailClient = ({ postId, initialData, renderMode = 'full' }) => {
   const [post, setPost] = useState(initialData || null);
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState(null);
@@ -50,12 +50,6 @@ const PostDetailClient = ({ postId, initialData }) => {
           },
         });
         
-        // 注意：这里不再更新UI中的阅览量，保持与initialData或API获取的数据一致
-        // 移除以下代码：
-        // if (response.ok) {
-        //   setViewCount(prev => prev + 1);
-        // }
-        
         return { success: response.ok, shouldIncrementServerCount };
       }
       
@@ -65,6 +59,37 @@ const PostDetailClient = ({ postId, initialData }) => {
       return { success: false, error };
     }
   };
+
+  // 专门处理阅览量增加的useEffect，与数据获取分离
+  useEffect(() => {
+    // 确保在客户端，且有postId，且未尝试过增加阅览量
+    if (typeof window !== 'undefined' && postId && !hasAttemptedViewIncrement) {
+      const handleViewCount = async () => {
+        try {
+          // 异步增加阅览量，但不更新UI显示
+          await incrementViewCount(postId);
+          console.log('阅览量增加请求已发送');
+        } catch (error) {
+          console.error('阅览量增加失败:', error);
+        } finally {
+          // 无论成功失败，都标记为已尝试，避免重复执行
+          setHasAttemptedViewIncrement(true);
+        }
+      };
+      
+      // 延迟执行，确保在页面完全加载后处理阅览量
+      const timer = setTimeout(() => {
+        handleViewCount();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [postId, hasAttemptedViewIncrement]);
+
+  // 如果是仅阅读量模式，不渲染任何UI
+  if (renderMode === 'viewCountOnly') {
+    return null;
+  }
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -111,34 +136,6 @@ const PostDetailClient = ({ postId, initialData }) => {
       document.title = "CyBlog ｜ 技术博客";
     };
   }, [postId, initialData]);
-
-  // 专门处理阅览量增加的useEffect，与数据获取分离
-  useEffect(() => {
-    // 确保在客户端，且有postId，且未尝试过增加阅览量
-    if (typeof window !== 'undefined' && postId && !hasAttemptedViewIncrement) {
-      const handleViewCount = async () => {
-        try {
-          // 异步增加阅览量，但不更新UI显示
-          // 这样保证显示的阅览量只来自initialData或API，而不是客户端计算结果
-          // 这样能确保首页和详情页显示的阅览量一致
-          await incrementViewCount(postId);
-          console.log('阅览量增加请求已发送，但UI不立即更新');
-        } catch (error) {
-          console.error('阅览量增加失败:', error);
-        } finally {
-          // 无论成功失败，都标记为已尝试，避免重复执行
-          setHasAttemptedViewIncrement(true);
-        }
-      };
-      
-      // 延迟执行，确保在页面完全加载后处理阅览量
-      const timer = setTimeout(() => {
-        handleViewCount();
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [postId, hasAttemptedViewIncrement]); // 依赖postId和hasAttemptedViewIncrement
 
   if (isLoading) {
     return (
