@@ -42,6 +42,20 @@ const generateId = (text) => {
   return processed;
 };
 
+// 递归获取 React children 的纯文本
+const getTextFromChildren = (children) => {
+  if (typeof children === 'string' || typeof children === 'number') {
+    return children.toString();
+  }
+  if (Array.isArray(children)) {
+    return children.map(getTextFromChildren).join('');
+  }
+  if (children && children.props && children.props.children) {
+    return getTextFromChildren(children.props.children);
+  }
+  return '';
+};
+
 const MarkdownRenderer = ({ content }) => {
   const [copiedId, setCopiedId] = useState(null);
 
@@ -107,28 +121,34 @@ const MarkdownRenderer = ({ content }) => {
     },
     // 标题渲染
     h1: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h1 id={id} {...props}>{children}</h1>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h1 {...props} id={id}>{children}</h1>;
     },
     h2: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h2 id={id} {...props}>{children}</h2>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h2 {...props} id={id}>{children}</h2>;
     },
     h3: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h3 id={id} {...props}>{children}</h3>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h3 {...props} id={id}>{children}</h3>;
     },
     h4: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h4 id={id} {...props}>{children}</h4>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h4 {...props} id={id}>{children}</h4>;
     },
     h5: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h5 id={id} {...props}>{children}</h5>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h5 {...props} id={id}>{children}</h5>;
     },
     h6: ({ node, children, ...props }) => {
-      const id = generateId(children.toString());
-      return <h6 id={id} {...props}>{children}</h6>;
+      const text = getTextFromChildren(children);
+      const id = generateId(text);
+      return <h6 {...props} id={id}>{children}</h6>;
     },
     // 增强图片渲染 - 修复嵌套问题
     img({ node, ...props }) {

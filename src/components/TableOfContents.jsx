@@ -32,10 +32,18 @@ const generateId = (text) => {
 
 const TableOfContents = ({ content }) => {
   const [activeId, setActiveId] = useState('');
+  // 创建一个状态用于移动端目录的显示/隐藏
+  const [showMobileToc, setShowMobileToc] = useState(false);
+  
   const router = useRouter();
   // 添加一个ref来记录最近是否为手动点击
   const recentClickRef = useRef(false);
   const clickTimeoutRef = useRef(null);
+  
+  // 目录容器的ref，用于自动滚动
+  const tocContainerRef = useRef(null);
+  // 移动端目录容器ref
+  const mobileTocContainerRef = useRef(null);
 
   // 解析文章内容，提取标题
   const extractHeadings = (markdown) => {
@@ -48,7 +56,15 @@ const TableOfContents = ({ content }) => {
     
     while ((match = headingRegex.exec(markdown)) !== null) {
       const level = match[1].length; // 标题级别 (# ## ### #### ##### ######)
-      const text = match[2].trim();
+      let text = match[2].trim();
+      
+      // 移除原文本中可能存在的 markdown 特殊符号以便和纯文本对齐
+      // 比如： \` (代码块) 或者 [text](url) 里的超链接等
+      // 先去除 markdown 中的链接的 url 部分 [文本](链接) => 文本
+      text = text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+      // 再清理掉其他的加粗、斜体、代码块等符号
+      text = text.replace(/[*_~`]/g, '');
+
       // 使用与MarkdownRenderer完全一致的ID生成逻辑
       const id = generateId(text);
       
@@ -96,6 +112,30 @@ const TableOfContents = ({ content }) => {
     
     return () => clearTimeout(timer);
   }, [content]);
+
+  // 当 activeId 发生变化时，如果目录较长，使对应的高亮项自动滚动到可视区域内
+  // 同时也监听 showMobileToc，确保移动端弹窗刚打开时也能滚到正确位置
+  useEffect(() => {
+    if (!activeId) return;
+
+    // 桌面端容器滚动
+    if (tocContainerRef.current) {
+      const activeElement = tocContainerRef.current.querySelector(`a[href="#${activeId}"]`);
+      if (activeElement) {
+        activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // 移动端容器滚动（放在超时函数中确保DOM渲染及抽屉动画完毕）
+    if (showMobileToc && mobileTocContainerRef.current) {
+      setTimeout(() => {
+        const activeElementMobile = mobileTocContainerRef.current.querySelector(`a[href="#${activeId}"]`);
+        if (activeElementMobile) {
+          activeElementMobile.scrollIntoView({ behavior: 'auto', block: 'center' });
+        }
+      }, 50);
+    }
+  }, [activeId, showMobileToc]);
 
   // 初始化目录
   const initializeTableOfContents = (headings) => {
@@ -263,8 +303,15 @@ const TableOfContents = ({ content }) => {
     return null;
   }
 
-  // 创建一个状态用于移动端目录的显示/隐藏
-  const [showMobileToc, setShowMobileToc] = useState(false);
+  // 移动端：处理抽屉打开时的背景滚动穿透(Scroll Bleed)问题
+  useEffect(() => {
+    if (showMobileToc) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showMobileToc]);
 
   // 添加一个组件挂载后的ISR水合处理机制
   useEffect(() => {
@@ -409,7 +456,7 @@ const TableOfContents = ({ content }) => {
       <nav className="toc hidden lg:block">
         <div className="sticky top-8 flex flex-col">
           <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 py-1 z-10">目录</h4>
-          <div className="overflow-y-auto max-h-[calc(100vh-8rem)]">
+          <div ref={tocContainerRef} className="overflow-y-auto max-h-[calc(100vh-8rem)] scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <ul className="space-y-2 text-sm">
               {headings.map((heading, index) => {
                 // 根据级别计算缩进
@@ -466,8 +513,16 @@ const TableOfContents = ({ content }) => {
 
       {/* 移动端目录弹出层 */}
       {showMobileToc && (
-        <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-end">
-          <div className="bg-white dark:bg-gray-900 w-3/4 h-full overflow-y-auto p-4 mt-16">
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-end"
+          onClick={() => setShowMobileToc(false)} // 点击背景区域即可关闭目录
+        >
+          <div 
+            ref={mobileTocContainerRef}
+            className="bg-white dark:bg-gray-900 w-3/4 h-full overflow-y-auto p-4 pt-16 pb-20 scrollbar-hide" 
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onClick={(e) => e.stopPropagation()} // 阻止事件冒泡，防止点击侧边栏本体时触发背景的关闭事件
+          >
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">目录</h4>
               <button 
