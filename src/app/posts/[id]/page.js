@@ -150,7 +150,7 @@ export default async function PostDetail(props) {
             <TableOfContents content={post.content} />
             
             {/* 文章内容 - 服务端渲染 */}
-            <div className="flex-1 prose prose-lg prose-blue dark:prose-invert max-w-none mb-12 pt-0 mt-0">
+            <div className="flex-1 min-w-0 prose prose-lg prose-blue dark:prose-invert max-w-none mb-12 pt-0 mt-0">
               <MarkdownRendererServer content={post.content} />
             </div>
           </div>

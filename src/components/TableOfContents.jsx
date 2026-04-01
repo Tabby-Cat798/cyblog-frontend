@@ -469,6 +469,7 @@ const TableOfContents = ({ content }) => {
                 
                 // 判断当前项是否为活动项
                 const isActive = activeId === heading.id;
+                const isLevelTwo = heading.level === 2;
                 
                 return (
                   <li 
@@ -486,7 +487,7 @@ const TableOfContents = ({ content }) => {
                         isActive
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
                           : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                      }`}
+                      } ${isLevelTwo ? 'font-semibold' : ''}`}
                     >
                       {heading.text}
                     </a>
@@ -546,6 +547,7 @@ const TableOfContents = ({ content }) => {
                 
                 // 判断当前项是否为活动项
                 const isActive = activeId === heading.id;
+                const isLevelTwo = heading.level === 2;
                 
                 return (
                   <li 
@@ -564,7 +566,7 @@ const TableOfContents = ({ content }) => {
                         isActive
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-medium'
                           : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                      }`}
+                      } ${isLevelTwo ? 'font-semibold' : ''}`}
                     >
                       {heading.text}
                     </a>

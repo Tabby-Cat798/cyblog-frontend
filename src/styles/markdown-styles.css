@@ -4,6 +4,8 @@
 .markdown-container {
   margin-top: 0;
   padding-top: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* 调整第一个标题元素的上边距 */
@@ -21,6 +23,22 @@
   font-family: "Noto Sans SC", sans-serif;
   color: #333; /* 文字颜色 */
   line-height: 1.8;
+  max-width: 100%;
+}
+
+.prose p,
+.prose li,
+.prose blockquote,
+.prose td,
+.prose th,
+.prose a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.prose pre {
+  max-width: 100%;
+  /* overflow-x: auto; */
 }
 
 /* 1️⃣ 标题样式 */
@@ -63,7 +81,7 @@
 /* 2️⃣ 段落样式 */
 .prose p {
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.9;
   color: #444;
   margin-bottom: 1rem;
 }
@@ -72,7 +90,7 @@
 .prose ul,
 .prose ol {
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.9;
   margin: 1rem 0;
   padding-left: 1.5rem;
 }

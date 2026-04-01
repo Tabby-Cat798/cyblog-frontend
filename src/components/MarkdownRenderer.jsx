@@ -219,7 +219,7 @@ const MarkdownRenderer = ({ content }) => {
   };
 
   return (
-    <div className="prose prose-sm prose-gray max-w-none dark:prose-invert markdown-container">
+    <div className="prose prose-sm prose-gray w-full max-w-full dark:prose-invert markdown-container">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
