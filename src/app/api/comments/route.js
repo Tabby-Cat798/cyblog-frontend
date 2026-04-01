@@ -84,24 +84,33 @@ export async function POST(request) {
       );
     }
     
+    let payload;
     try {
       // 验证JWT
-      const { payload } = await jwtVerify(
+      const result = await jwtVerify(
         token.value,
         new TextEncoder().encode(JWT_SECRET)
       );
-      
-      // 获取用户ID
-      const userId = payload.id;
-      
-      if (!userId) {
-        return NextResponse.json(
-          { error: '无效的令牌' },
-          { status: 401 }
-        );
-      }
-      
-      const body = await request.json();
+      payload = result.payload;
+    } catch (error) {
+      // JWT验证失败
+      return NextResponse.json(
+        { error: '无效的认证信息' },
+        { status: 401 }
+      );
+    }
+    
+    // 获取用户ID - 兼容两种可能的字段名
+    const userId = payload.id || payload.userId;
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: '无效的令牌' },
+        { status: 401 }
+      );
+    }
+    
+    const body = await request.json();
       
       // 验证必要字段
       if (!body.postId || !body.content) {
@@ -114,10 +123,10 @@ export async function POST(request) {
       const client = await clientPromise;
       const db = client.db(process.env.MONGODB_DB || 'blogs');
       
-      // 查找用户确认存在
-      const user = await db.collection('users').findOne({
-        _id: new ObjectId(userId)
-      });
+    // 查找用户确认存在
+    const user = await db.collection('users').findOne({
+      _id: new ObjectId(userId)
+    });
       
       if (!user) {
         return NextResponse.json(
@@ -164,13 +173,6 @@ export async function POST(request) {
         }
       }, { status: 201 });
       
-    } catch (error) {
-      // JWT验证失败
-      return NextResponse.json(
-        { error: '无效的认证信息' },
-        { status: 401 }
-      );
-    }
   } catch (error) {
     console.error('发表评论失败:', error);
     return NextResponse.json(
