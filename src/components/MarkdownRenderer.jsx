@@ -56,7 +56,7 @@ const getTextFromChildren = (children) => {
   return '';
 };
 
-const MarkdownRenderer = ({ content }) => {
+const MarkdownRenderer = ({ content, className = "" }) => {
   const [copiedId, setCopiedId] = useState(null);
 
   // 复制代码到剪贴板的函数
@@ -219,7 +219,9 @@ const MarkdownRenderer = ({ content }) => {
   };
 
   return (
-    <div className="prose prose-sm prose-gray w-full max-w-full dark:prose-invert markdown-container">
+    <div
+      className={`prose prose-sm prose-gray w-full max-w-full dark:prose-invert markdown-container ${className}`.trim()}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[

@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { AuthProvider } from "@/lib/auth";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import clientPromise from '@/lib/mongodb';
+import AIWidget from "@/components/ai/AIWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,6 +73,7 @@ export default async function RootLayout({ children }) {
               {children}
             </main>
             <Footer />
+            <AIWidget />
           </SettingsProvider>
         </AuthProvider>
       </body>

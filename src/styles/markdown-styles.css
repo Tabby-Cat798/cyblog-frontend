@@ -271,6 +271,104 @@
   margin-top: 0.25rem;
 }
 
+/* Copilot 聊天框中的紧凑版 Markdown 样式 */
+.ai-markdown .markdown-container {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.ai-markdown .prose {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.ai-markdown .prose h1,
+.ai-markdown .prose h2,
+.ai-markdown .prose h3,
+.ai-markdown .prose h4,
+.ai-markdown .prose h5,
+.ai-markdown .prose h6 {
+  line-height: 1.35;
+  margin-top: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.ai-markdown .prose h1 {
+  font-size: 1.1rem;
+  padding-bottom: 0.2rem;
+  border-bottom-width: 1px;
+}
+
+.ai-markdown .prose h2 {
+  font-size: 1rem;
+  padding-bottom: 0.15rem;
+}
+
+.ai-markdown .prose h3,
+.ai-markdown .prose h4,
+.ai-markdown .prose h5,
+.ai-markdown .prose h6 {
+  font-size: 0.95rem;
+}
+
+.ai-markdown .prose p,
+.ai-markdown .prose li,
+.ai-markdown .prose td,
+.ai-markdown .prose th,
+.ai-markdown .prose a,
+.ai-markdown .prose blockquote {
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.ai-markdown .prose p {
+  margin-bottom: 0.75rem;
+}
+
+.ai-markdown .prose ul,
+.ai-markdown .prose ol {
+  font-size: 0.875rem;
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.ai-markdown .prose li {
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+.ai-markdown .code-block-wrapper {
+  margin: 0.9rem 0;
+  border-radius: 0.75rem;
+}
+
+.ai-markdown .code-language-tag {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.ai-markdown .code-block {
+  padding: 0.75rem !important;
+  font-size: 0.78rem !important;
+  line-height: 1.55 !important;
+}
+
+.ai-markdown .inline-code {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.82em;
+}
+
+.ai-markdown .markdown-table th,
+.ai-markdown .markdown-table td {
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.ai-markdown .prose blockquote {
+  padding: 0.75rem;
+  margin: 0.9rem 0;
+}
+
 /* 目录样式 */
 .toc {
   width: 240px;
