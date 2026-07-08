@@ -38,7 +38,7 @@ export async function createChatTextStream({
         },
       ],
       stream: true,
-      temperature: 0.3,
+      temperature: 0.4,
       max_tokens: 1200,
       thinking: {
         type: "disabled",
