@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faDownLeftAndUpRightToCenter,
   faPaperPlane,
   faRobot,
   faRotateRight,
   faStop,
   faTriangleExclamation,
+  faUpRightAndDownLeftFromCenter,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { streamChat } from "@/lib/ai/chat-client";
@@ -79,6 +81,7 @@ export default function AIWidget() {
   const [input, setInput] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [requestError, setRequestError] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const conversationIdRef = useRef(null);
   const abortControllerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -91,6 +94,7 @@ export default function AIWidget() {
     conversationIdRef.current =
       storedState?.conversationId || createConversationId();
     setMessages(normalizeStoredMessages(storedState?.messages));
+    setIsExpanded(Boolean(storedState?.isExpanded));
     setIsStateRestored(true);
   }, []);
 
@@ -144,6 +148,7 @@ export default function AIWidget() {
     const state = {
       conversationId: conversationIdRef.current,
       messages: normalizeStoredMessages(messages),
+      isExpanded,
     };
 
     try {
@@ -151,7 +156,7 @@ export default function AIWidget() {
     } catch {
       // Storage can be unavailable in private browsing or strict browser modes.
     }
-  }, [messages, isStateRestored]);
+  }, [messages, isExpanded, isStateRestored]);
 
   const sendMessage = async (message = input) => {
     const trimmedMessage = message.trim();
@@ -306,7 +311,11 @@ export default function AIWidget() {
         aria-modal="true"
         aria-label="CyBlog AI 对话框"
         aria-hidden={!isOpen}
-        className={`fixed inset-x-2 bottom-2 z-[90] flex h-[min(720px,calc(100dvh-1rem))] flex-col overflow-hidden overscroll-contain rounded-2xl border border-gray-200 bg-white shadow-2xl transition-all duration-300 dark:border-gray-700 dark:bg-gray-900 sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[600px] sm:w-[400px] ${
+        className={`fixed inset-x-2 bottom-2 z-[90] flex h-[min(720px,calc(100dvh-1rem))] flex-col overflow-hidden overscroll-contain rounded-2xl border border-gray-200 bg-white shadow-2xl transition-all duration-300 dark:border-gray-700 dark:bg-gray-900 sm:inset-auto sm:bottom-6 sm:right-6 ${
+          isExpanded
+            ? "sm:h-[min(820px,calc(100dvh-3rem))] sm:w-[min(920px,calc(100vw-3rem))]"
+            : "sm:h-[600px] sm:w-[400px]"
+        } ${
           isOpen
             ? "translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-8 scale-95 opacity-0"
@@ -333,6 +342,22 @@ export default function AIWidget() {
           </div>
 
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((current) => !current)}
+              className="hidden rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:inline-flex"
+              aria-label={isExpanded ? "还原对话框" : "放大对话框"}
+              title={isExpanded ? "还原" : "放大"}
+            >
+              <FontAwesomeIcon
+                icon={
+                  isExpanded
+                    ? faDownLeftAndUpRightToCenter
+                    : faUpRightAndDownLeftFromCenter
+                }
+                className="h-4 w-4"
+              />
+            </button>
             <button
               type="button"
               onClick={resetConversation}
