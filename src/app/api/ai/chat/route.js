@@ -1,7 +1,11 @@
 import { createChatTextStream } from "@/lib/ai/model-provider";
 import { createRagSystemPrompt } from "@/lib/ai/prompts";
 import { buildRetrievalQuery } from "@/lib/ai/query-rewrite";
-import { retrieveArticleChunks } from "@/lib/ai/retrieval";
+import {
+  retrieveArticleChunks,
+  retrieveArticleSummaryChunks,
+  resolveArticleIdForSummaryQuery,
+} from "@/lib/ai/retrieval";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth-options";
 import { hasAICopilotAccess, isAICopilotAuthRequired } from "@/lib/ai/access";
@@ -63,22 +67,38 @@ export async function POST(request) {
         });
         const retrievalQuery = retrievalQueryResult.query || message;
         const requiresArticleDiversity = isMultiArticleQuestion(retrievalQuery);
+        const summaryArticleId = isArticleSummaryQuestion(message)
+          ? body.articleId ||
+            await resolveArticleIdForSummaryQuery({
+              query: retrievalQuery,
+              traceId,
+            })
+          : null;
         console.info(
           `[${traceId}] 检索 Query 准备完成，strategy=${retrievalQueryResult.strategy}，reasons=${retrievalQueryResult.reasons.join(
             ","
-          ) || "none"}，queryLength=${retrievalQuery.length}`
+          ) || "none"}，queryLength=${retrievalQuery.length}，summaryArticleId=${
+            summaryArticleId || "none"
+          }`
         );
-        const sources = await retrieveArticleChunks({
-          query: retrievalQuery,
-          articleId: body.articleId,
-          candidateK: requiresArticleDiversity ? 30 : 24,
-          finalK: 10,
-          maxChunksPerArticle: 3,
-          minDistinctArticles: requiresArticleDiversity ? 2 : 1,
-          traceId,
-        });
+        const sources = summaryArticleId
+          ? await retrieveArticleSummaryChunks({
+              articleId: summaryArticleId,
+              traceId,
+            })
+          : await retrieveArticleChunks({
+              query: retrievalQuery,
+              articleId: body.articleId,
+              candidateK: requiresArticleDiversity ? 30 : 24,
+              finalK: 10,
+              maxChunksPerArticle: 3,
+              minDistinctArticles: requiresArticleDiversity ? 2 : 1,
+              traceId,
+            });
         console.info(
-          `[${traceId}] RAG 检索完成，命中 ${sources.length} 条，耗时 ${
+          `[${traceId}] RAG 检索完成，mode=${
+            summaryArticleId ? "article-summary" : "vector"
+          }，命中 ${sources.length} 条，耗时 ${
             Date.now() - requestStartedAt
           }ms`
         );
@@ -183,6 +203,33 @@ function isMultiArticleQuestion(message) {
 
   return multiArticleSignals.some((signal) =>
     normalizedMessage.includes(signal)
+  );
+}
+
+function isArticleSummaryQuestion(message) {
+  const normalizedMessage = String(message || "").toLowerCase();
+  const summaryActions = [
+    "总结",
+    "概括",
+    "提炼",
+    "归纳",
+    "梳理",
+    "讲了什么",
+  ];
+  const articleTargets = [
+    "当前文章",
+    "这篇文章",
+    "这篇",
+    "文章",
+    "面经",
+    "知识点",
+    "八股",
+    "手撕",
+  ];
+
+  return (
+    summaryActions.some((signal) => normalizedMessage.includes(signal)) &&
+    articleTargets.some((signal) => normalizedMessage.includes(signal))
   );
 }
 
