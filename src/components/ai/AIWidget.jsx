@@ -490,7 +490,7 @@ function getCurrentArticleContext(pathname) {
 
 function MessageBubble({ message }) {
   const isUser = message.role === "user";
-  const referencedSources = getReferencedSources(message);
+  const citationView = createCitationView(message);
 
   return (
     <div
@@ -516,7 +516,7 @@ function MessageBubble({ message }) {
         ) : isUser ? (
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         ) : (
-          <AssistantMarkdown content={message.content} />
+          <AssistantMarkdown content={citationView.content} />
         )}
         {message.status === "stopped" && (
           <span className="mt-2 block text-[11px] text-gray-500 dark:text-gray-400">
@@ -525,14 +525,14 @@ function MessageBubble({ message }) {
         )}
         {!isUser &&
           message.status === "complete" &&
-          referencedSources.length > 0 && (
+          citationView.sources.length > 0 && (
           <div className="mt-3 space-y-2 border-t border-gray-200 pt-2 dark:border-gray-700">
             <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
               参考文章
             </p>
-            {referencedSources.map((source) => (
+            {citationView.sources.map((source) => (
               <a
-                key={`${source.articleId}-${source.citation}`}
+                key={`${source.articleId}-${source.originalCitation}`}
                 href={source.url}
                 className="block rounded-lg bg-white/80 px-2.5 py-2 text-xs text-blue-700 transition-colors hover:bg-blue-50 dark:bg-gray-900/70 dark:text-blue-300 dark:hover:bg-blue-950/50"
               >
@@ -553,41 +553,81 @@ function MessageBubble({ message }) {
   );
 }
 
-function getReferencedSources(message) {
+function createCitationView(message) {
   if (!Array.isArray(message.sources) || !message.sources.length) {
-    return [];
+    return {
+      content: message.content,
+      sources: [],
+    };
   }
 
-  const referencedCitations = extractReferencedCitations(message.content);
-  if (!referencedCitations.size) {
-    return [];
+  const citationOrder = extractReferencedCitations(message.content);
+  if (!citationOrder.length) {
+    return {
+      content: message.content,
+      sources: [],
+    };
   }
 
-  const referencedSources = message.sources.filter((source) =>
-    referencedCitations.has(Number(source.citation))
+  const sourcesByCitation = new Map(
+    message.sources.map((source) => [Number(source.citation), source])
   );
-
+  const citationMap = new Map();
   const dedupedSources = [];
   const seen = new Set();
+  const dedupedCitationByKey = new Map();
 
-  for (const source of referencedSources) {
+  for (const originalCitation of citationOrder) {
+    const source = sourcesByCitation.get(originalCitation);
+    if (!source) continue;
+
     const dedupeKey = `${source.articleId}::${source.heading || ""}`;
-    if (seen.has(dedupeKey)) continue;
+    if (seen.has(dedupeKey)) {
+      citationMap.set(originalCitation, dedupedCitationByKey.get(dedupeKey));
+      continue;
+    }
 
     seen.add(dedupeKey);
-    dedupedSources.push(source);
+    const citation = dedupedSources.length + 1;
+    citationMap.set(originalCitation, citation);
+    dedupedCitationByKey.set(dedupeKey, citation);
+    dedupedSources.push({
+      ...source,
+      originalCitation,
+      citation,
+    });
   }
 
-  return dedupedSources;
+  const normalizedContent = replaceCitations(message.content, citationMap);
+
+  return {
+    content: normalizedContent,
+    sources: dedupedSources,
+  };
 }
 
 function extractReferencedCitations(content) {
   const matches = String(content || "").match(/\[(\d+)\]/g) || [];
-  return new Set(
-    matches
-      .map((match) => Number(match.slice(1, -1)))
-      .filter((value) => Number.isInteger(value) && value > 0)
-  );
+  const citations = [];
+  const seen = new Set();
+
+  for (const match of matches) {
+    const citation = Number(match.slice(1, -1));
+    if (!Number.isInteger(citation) || citation <= 0) continue;
+    if (seen.has(citation)) continue;
+
+    seen.add(citation);
+    citations.push(citation);
+  }
+
+  return citations;
+}
+
+function replaceCitations(content, citationMap) {
+  return String(content || "").replace(/\[(\d+)\]/g, (match, rawCitation) => {
+    const citation = Number(rawCitation);
+    return citationMap.has(citation) ? `[${citationMap.get(citation)}]` : match;
+  });
 }
 
 function AssistantMarkdown({ content }) {
