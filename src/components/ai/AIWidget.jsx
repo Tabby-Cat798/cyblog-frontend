@@ -649,9 +649,29 @@ function extractReferencedCitations(content) {
 }
 
 function replaceCitations(content, citationMap) {
-  return String(content || "").replace(/\[(\d+)\]/g, (match, rawCitation) => {
-    const citation = Number(rawCitation);
-    return citationMap.has(citation) ? `[${citationMap.get(citation)}]` : match;
+  const normalizedContent = String(content || "").replace(
+    /\[(\d+)\]/g,
+    (match, rawCitation) => {
+      const citation = Number(rawCitation);
+      return citationMap.has(citation)
+        ? `[${citationMap.get(citation)}]`
+        : match;
+    }
+  );
+
+  return collapseDuplicateCitations(normalizedContent);
+}
+
+function collapseDuplicateCitations(content) {
+  return content.replace(/(?:\[(\d+)\]){2,}/g, (match) => {
+    const citations = [...match.matchAll(/\[(\d+)\]/g)].map((item) => item[1]);
+    const uniqueCitations = [...new Set(citations)];
+
+    if (uniqueCitations.length === 1) {
+      return `[${uniqueCitations[0]}]`;
+    }
+
+    return uniqueCitations.map((citation) => `[${citation}]`).join("");
   });
 }
 
