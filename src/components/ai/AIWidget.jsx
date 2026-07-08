@@ -189,6 +189,7 @@ export default function AIWidget() {
         payload: {
           message: trimmedMessage,
           articleId: getArticleId(pathname),
+          currentArticle: getCurrentArticleContext(pathname),
           conversationId: conversationIdRef.current,
           history,
         },
@@ -475,6 +476,16 @@ function handleStreamEvent(event, localMessageId, setMessages) {
 function getArticleId(pathname) {
   const match = pathname.match(/^\/posts\/([^/]+)$/);
   return match?.[1] || null;
+}
+
+function getCurrentArticleContext(pathname) {
+  if (!getArticleId(pathname) || typeof document === "undefined") return null;
+
+  const title = document.title
+    .replace(/\s*\|\s*CyBlog.*$/i, "")
+    .trim();
+
+  return title ? { title } : null;
 }
 
 function MessageBubble({ message }) {

@@ -1,5 +1,6 @@
 import { createChatTextStream } from "@/lib/ai/model-provider";
 import { createRagSystemPrompt } from "@/lib/ai/prompts";
+import { buildRetrievalQuery } from "@/lib/ai/query-rewrite";
 import { retrieveArticleChunks } from "@/lib/ai/retrieval";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth-options";
@@ -55,9 +56,20 @@ export async function POST(request) {
     async start(controller) {
       try {
         console.info(`[${traceId}] 开始 RAG 检索`);
-        const requiresArticleDiversity = isMultiArticleQuestion(message);
+        const retrievalQueryResult = buildRetrievalQuery({
+          message,
+          history: body.history,
+          currentArticle: body.currentArticle,
+        });
+        const retrievalQuery = retrievalQueryResult.query || message;
+        const requiresArticleDiversity = isMultiArticleQuestion(retrievalQuery);
+        console.info(
+          `[${traceId}] 检索 Query 准备完成，strategy=${retrievalQueryResult.strategy}，reasons=${retrievalQueryResult.reasons.join(
+            ","
+          ) || "none"}，queryLength=${retrievalQuery.length}`
+        );
         const sources = await retrieveArticleChunks({
-          query: message,
+          query: retrievalQuery,
           articleId: body.articleId,
           candidateK: requiresArticleDiversity ? 30 : 24,
           finalK: 10,
@@ -74,7 +86,11 @@ export async function POST(request) {
         console.info(`[${traceId}] 开始创建 DeepSeek 流`);
         const chat = await createChatTextStream({
           message,
-          systemPrompt: createRagSystemPrompt({ sources }),
+          systemPrompt: createRagSystemPrompt({
+            sources,
+            originalQuestion: message,
+            retrievalQuery,
+          }),
           history: body.history,
           signal: request.signal,
           traceId,

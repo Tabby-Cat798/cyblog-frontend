@@ -1,4 +1,8 @@
-export function createRagSystemPrompt({ sources }) {
+export function createRagSystemPrompt({
+  sources,
+  originalQuestion,
+  retrievalQuery,
+}) {
   const rules = [
     "你是 CyBlog 的 AI 助手。",
     "使用简洁、准确的中文回答。",
@@ -11,6 +15,11 @@ export function createRagSystemPrompt({ sources }) {
     "当问题与博客强相关但资料不足时，要先说明博客里能确认的部分，再补充必要的通用解释。",
   ];
   rules.push("当前未接入联网搜索工具，不能虚构网络检索结果或外部来源。");
+  if (isRewrittenQuery({ originalQuestion, retrievalQuery })) {
+    rules.push(
+      "检索问题只用于补全上下文，最终回答必须优先回应用户原始问题，不要把检索问题当成新的用户问题。"
+    );
+  }
 
   const context = sources.length
     ? sources
@@ -23,5 +32,19 @@ export function createRagSystemPrompt({ sources }) {
         .join("\n\n")
     : "没有检索到达到相关度阈值的博客资料。";
 
-  return `${rules.join("\n")}\n\n--- 博客资料开始 ---\n${context}\n--- 博客资料结束 ---`;
+  const questionContext = isRewrittenQuery({ originalQuestion, retrievalQuery })
+    ? `\n\n--- 问题上下文 ---\n用户原始问题：${originalQuestion}\n检索问题：${retrievalQuery}\n--- 问题上下文结束 ---`
+    : "";
+
+  return `${rules.join(
+    "\n"
+  )}${questionContext}\n\n--- 博客资料开始 ---\n${context}\n--- 博客资料结束 ---`;
+}
+
+function isRewrittenQuery({ originalQuestion, retrievalQuery }) {
+  return (
+    originalQuestion &&
+    retrievalQuery &&
+    originalQuestion.trim() !== retrievalQuery.trim()
+  );
 }
