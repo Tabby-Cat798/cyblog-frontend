@@ -55,9 +55,14 @@ export async function POST(request) {
     async start(controller) {
       try {
         console.info(`[${traceId}] 开始 RAG 检索`);
+        const requiresArticleDiversity = isMultiArticleQuestion(message);
         const sources = await retrieveArticleChunks({
           query: message,
           articleId: body.articleId,
+          candidateK: requiresArticleDiversity ? 30 : 24,
+          finalK: 10,
+          maxChunksPerArticle: 3,
+          minDistinctArticles: requiresArticleDiversity ? 2 : 1,
           traceId,
         });
         console.info(
@@ -141,6 +146,28 @@ export async function POST(request) {
       "X-Accel-Buffering": "no",
     },
   });
+}
+
+function isMultiArticleQuestion(message) {
+  const normalizedMessage = String(message || "").toLowerCase();
+  const multiArticleSignals = [
+    "多篇",
+    "不同文章",
+    "几篇文章",
+    "跨文章",
+    "各篇",
+    "综合博客",
+    "博客里有哪些",
+    "作者写过哪些",
+    "全部文章",
+    "所有文章",
+    "不要遗漏",
+    "分别概括",
+  ];
+
+  return multiArticleSignals.some((signal) =>
+    normalizedMessage.includes(signal)
+  );
 }
 
 function toPublicSource(source) {

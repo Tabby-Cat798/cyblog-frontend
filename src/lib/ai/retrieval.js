@@ -1,14 +1,19 @@
 import clientPromise from "../mongodb.js";
 import { createQueryEmbedding } from "./embeddings.js";
 
-const DEFAULT_TOP_K = 5;
+const DEFAULT_CANDIDATE_K = 24;
+const DEFAULT_FINAL_K = 10;
+const DEFAULT_MAX_CHUNKS_PER_ARTICLE = 3;
 const DEFAULT_MIN_SCORE = 0.35;
 const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 
 export async function retrieveArticleChunks({
   query,
   articleId,
-  topK = DEFAULT_TOP_K,
+  candidateK = DEFAULT_CANDIDATE_K,
+  finalK = DEFAULT_FINAL_K,
+  maxChunksPerArticle = DEFAULT_MAX_CHUNKS_PER_ARTICLE,
+  minDistinctArticles = 1,
   traceId = "rag",
 }) {
   const startedAt = Date.now();
@@ -34,7 +39,7 @@ export async function retrieveArticleChunks({
   );
   const preferredArticleId = articleId ? String(articleId) : null;
 
-  const results = chunks
+  const candidates = chunks
     .map((chunk) => {
       const vectorScore = cosineSimilarity(
         queryEmbedding.embedding,
@@ -54,7 +59,15 @@ export async function retrieveArticleChunks({
     })
     .filter((chunk) => chunk.vectorScore >= minScore)
     .sort((left, right) => right.score - left.score)
-    .slice(0, topK)
+    .slice(0, candidateK);
+
+  const selectedChunks = selectDiverseChunks(candidates, {
+    finalK,
+    maxChunksPerArticle,
+    minDistinctArticles,
+  });
+
+  const results = selectedChunks
     .map((chunk, index) => ({
       citation: index + 1,
       articleId: String(chunk.articleId),
@@ -71,12 +84,79 @@ export async function retrieveArticleChunks({
     }));
 
   console.info(
-    `[${traceId}] 相似度计算完成，返回 ${results.length} 条，topK=${topK}，minScore=${minScore}，总耗时 ${
+    `[${traceId}] 相似度计算完成，候选 ${candidates.length} 条，返回 ${results.length} 条，candidateK=${candidateK}，finalK=${finalK}，maxChunksPerArticle=${maxChunksPerArticle}，minDistinctArticles=${minDistinctArticles}，minScore=${minScore}，总耗时 ${
       Date.now() - startedAt
     }ms`
   );
 
   return results;
+}
+
+export function selectDiverseChunks(
+  candidates,
+  { finalK, maxChunksPerArticle, minDistinctArticles = 1 }
+) {
+  const safeFinalK = Math.max(0, Number(finalK) || 0);
+  const safeArticleLimit = Math.max(1, Number(maxChunksPerArticle) || 1);
+  const safeMinArticles = Math.max(1, Number(minDistinctArticles) || 1);
+  const selected = [];
+  const selectedChunkKeys = new Set();
+  const articleCounts = new Map();
+
+  if (safeMinArticles > 1) {
+    const selectedArticles = new Set();
+
+    for (const candidate of candidates) {
+      if (selected.length >= safeFinalK) break;
+
+      const articleId = String(candidate.articleId);
+      if (selectedArticles.has(articleId)) continue;
+
+      addSelectedChunk({
+        candidate,
+        selected,
+        selectedChunkKeys,
+        articleCounts,
+      });
+      selectedArticles.add(articleId);
+
+      if (selectedArticles.size >= safeMinArticles) break;
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (selected.length >= safeFinalK) break;
+
+    const articleId = String(candidate.articleId);
+    const chunkKey = getChunkKey(candidate);
+    if (selectedChunkKeys.has(chunkKey)) continue;
+    if ((articleCounts.get(articleId) || 0) >= safeArticleLimit) continue;
+
+    addSelectedChunk({
+      candidate,
+      selected,
+      selectedChunkKeys,
+      articleCounts,
+    });
+  }
+
+  return selected.sort((left, right) => right.score - left.score);
+}
+
+function addSelectedChunk({
+  candidate,
+  selected,
+  selectedChunkKeys,
+  articleCounts,
+}) {
+  const articleId = String(candidate.articleId);
+  selected.push(candidate);
+  selectedChunkKeys.add(getChunkKey(candidate));
+  articleCounts.set(articleId, (articleCounts.get(articleId) || 0) + 1);
+}
+
+function getChunkKey(chunk) {
+  return `${chunk.articleId}:${chunk.chunkIndex}`;
 }
 
 async function getCachedChunks(embeddingModel) {
